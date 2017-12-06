@@ -8,7 +8,7 @@ def fetch(user, page=1):
 
 
 def save(username):
-    this_dir = "../fetched_data/user_recent_tracks/{username}".format(
+    this_dir = "./fetched_data/user_recent_tracks/{username}".format(
         username=username)
     user_artist_response = fetch(username)
 
@@ -21,8 +21,8 @@ def save(username):
     for i in range(0, int(total_user_pages)):
         page = i + 1
 
-        if page == 1 | page > 10:
-            pass
+        if page == 1 or page > 10:
+            continue
 
         user_artist_response = fetch(username, page)
         current_page = user_artist_response['recenttracks']['@attr']['page']

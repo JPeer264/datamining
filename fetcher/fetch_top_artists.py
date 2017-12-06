@@ -6,7 +6,7 @@ def fetch(page=1):
 
 
 def save():
-    this_dir = "../fetched_data/top_artists"
+    this_dir = "./fetched_data/top_artists"
     artists_response = fetch()
 
     helper.ensure_dir(this_dir)
@@ -18,8 +18,8 @@ def save():
     for i in range(0, int(total_user_pages)):
         page = i + 1
 
-        if page == 1 | page > 10:
-            pass
+        if page == 1 or page > 10:
+            continue
 
         artists_response = fetch(page)
         current_page = artists_response['artists']['@attr']['page']
@@ -29,3 +29,7 @@ def save():
             "{this_dir}/page_{page}.json".format(
                 this_dir=this_dir, page=current_page)
         )
+
+
+if __name__ == '__main__':
+    save()

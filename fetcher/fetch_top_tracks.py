@@ -6,7 +6,7 @@ def fetch(page=1):
 
 
 def save():
-    this_dir = "../fetched_data/top_tracks"
+    this_dir = "./fetched_data/top_tracks"
     tracks_response = fetch()
 
     helper.ensure_dir(this_dir)
@@ -18,8 +18,8 @@ def save():
     for i in range(0, int(total_user_pages)):
         page = i + 1
 
-        if page == 1 | page > 10:
-            pass
+        if page == 1 or page > 10:
+            continue
 
         tracks_response = fetch(page)
         current_page = tracks_response['tracks']['@attr']['page']

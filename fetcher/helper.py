@@ -21,6 +21,16 @@ def read_csv(file):
 # /read_csv
 
 
+def ensure_dir(directory):
+    """
+    Ensures that the directory exists. If the directory structure does not exist, it is created.
+    :param directory: any path as string
+    """
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+# /ensure_dir
+
+
 def api_call(apiString):
     """
     triggers an api to the user api
@@ -91,13 +101,3 @@ def log_highlight(text):
 
     return
 # /log_highlight
-
-
-def ensure_dir(directory):
-    """
-    Ensures that the directory exists. If the directory structure does not exist, it is created.
-    :param directory: any path as string
-    """
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-# /ensure_dir
