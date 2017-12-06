@@ -72,13 +72,17 @@ class UserRecentTracksGen:
 
         # playcount = track['playcount'].encode('utf8')
 
-        if mbid != "":
+        if not mbid == "":
             artist_id = self.track_mbids.index(mbid)
         else:
             artist_id = self.track_names.index(name)
 
         self.track_names.extend([name])
-        self.track_mbids.extend([mbid])
+
+        if not mbid == '':
+            self.track_mbids.extend([mbid])
+        else:
+            self.track_mbids.extend([name])
 
         return {
             'track_ref': str(artist_id),

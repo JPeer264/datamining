@@ -109,6 +109,8 @@ class TracksGen:
 
         if not mbid == '':
             self.track_mbids.extend([mbid])
+        else:
+            self.track_mbids.extend([name])
 
         return {
             'name': name,

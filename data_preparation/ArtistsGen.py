@@ -73,6 +73,8 @@ class ArtistsGen:
 
         if not mbid == '':
             self.artist_mbid.extend([mbid])
+        else:
+            self.artist_mbid.extend([name])
 
         return {
             'name': name,
