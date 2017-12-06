@@ -12,3 +12,8 @@
 
 1. Fetch Data Again
     1. `./fetcher/fetch_
+
+
+# Notes
+
+- Every page of `user_recent_tracks` starts with the value `nowplaying: true`

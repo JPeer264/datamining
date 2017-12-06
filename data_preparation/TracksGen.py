@@ -160,6 +160,10 @@ class TracksGen:
                 tracks = file_payload['recenttracks']['track']
 
                 for track in tracks:
+                    if '@attr' in track:
+                        if 'nowplaying' in track['@attr']:
+                            continue
+
                     track_array = self.get_track_array(track)
 
                     if track_array == "":
