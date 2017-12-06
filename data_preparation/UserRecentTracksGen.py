@@ -115,13 +115,11 @@ class UserRecentTracksGen:
                     if track_array == "":
                         continue
 
-                    all_tracks_array.extend([track_array])
-
                     tracks_line = tracks_line + \
-                        self.track_array_to_line(track)
+                        self.track_array_to_line(track_array)
 
             self.save(tracks_line, username)
 
 
-a = UserRecentTracksGen()
-a.compute_and_save()
+userRecentTracksGen = UserRecentTracksGen()
+userRecentTracksGen.compute_and_save()

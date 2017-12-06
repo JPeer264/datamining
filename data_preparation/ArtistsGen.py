@@ -66,11 +66,13 @@ class ArtistsGen:
         # playcount = artist['playcount'].encode('utf8')
 
         # make sure the artist name or mbid exists
-        if ((mbid == '') & (name in self.artist_names)) | (mbid in self.artist_mbid):
+        if ((mbid == '') and (name in self.artist_names)) or (mbid in self.artist_mbid):
             return ""
 
         self.artist_names.extend([name])
-        self.artist_mbid.extend([mbid])
+
+        if not mbid == '':
+            self.artist_mbid.extend([mbid])
 
         return {
             'name': name,

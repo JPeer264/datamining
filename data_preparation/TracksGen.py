@@ -96,7 +96,7 @@ class TracksGen:
         # playcount = track['playcount'].encode('utf8')
 
         # make sure the track name or mbid exists
-        if ((mbid == '') & (name in self.track_names)) | (mbid in self.track_mbids):
+        if ((mbid == '') and (name in self.track_names)) or (mbid in self.track_mbids):
             return ""
 
         if not self.no_artist_ref:
@@ -106,7 +106,9 @@ class TracksGen:
                 artist_id = self.artist_names.index(artist)
 
         self.track_names.extend([name])
-        self.track_mbids.extend([mbid])
+
+        if not mbid == '':
+            self.track_mbids.extend([mbid])
 
         return {
             'name': name,
@@ -150,6 +152,7 @@ class TracksGen:
 
         # loop over users recent tracks
         dirs = np.array(glob(self.FETCHED_DATA + self.USERS_RECENT_TRACKS_LOOP + "/*/"))
+
         for user_dir in dirs:
             files = glob(user_dir + "*.json")
             for file in files:
@@ -182,6 +185,6 @@ class TracksGen:
         return all_tracks_array
 
 
-# tracksGen = TracksGen()
-# tracksGen.compute()
-# tracksGen.save()
+tracksGen = TracksGen()
+tracksGen.compute()
+tracksGen.save()
