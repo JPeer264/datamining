@@ -21,7 +21,7 @@ class ArtistsGen:
         self.TOP_ARTISTS_LOOP = 'top_artists'
 
     def compute(self):
-        tracksGen = TracksGen()
+        tracksGen = TracksGen(True)
 
         self.all_tracks = tracksGen.prepare_tracks()
         self.artists_line = self.artist_array_to_line("init")
@@ -78,6 +78,8 @@ class ArtistsGen:
         }
 
     def save(self):
+        helper.ensure_dir(self.SAVE_DIR)
+
         to_write_file = open(self.SAVE_DIR + self.FILENAME, 'w')
 
         to_write_file.write(self.artists_line)
@@ -136,6 +138,6 @@ class ArtistsGen:
         return all_artists_array
 
 
-a = ArtistsGen()
-a.compute()
-a.save()
+# artistGen = ArtistsGen()
+# artistGen.compute()
+# artistGen.save()

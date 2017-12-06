@@ -6,19 +6,21 @@ import csv
 import helper
 
 class TracksGen:
-    def __init__(self):
+    def __init__(self, no_artist_ref = False):
         self.tracks_line = ""
         self.track_names = []
         self.track_mbids = []
         self.artist_names = []
         self.artist_mbids = []
+        self.no_artist_ref = no_artist_ref
 
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/"
         self.FILENAME = "tracks.txt"
-        self.ARTISTS_FILE = self.SAVE_DIR + "/artists.txt"
+        self.ARTISTS_FILE = self.SAVE_DIR + "artists.txt"
 
         self.USER_TRACKS_LOOP = 'user_top_tracks'
+        self.USERS_RECENT_TRACKS_LOOP = 'user_recent_tracks'
         self.TOP_TRACKS_LOOP = 'top_tracks'
 
 
@@ -29,6 +31,8 @@ class TracksGen:
 
         for track in all_tracks:
             self.tracks_line = self.tracks_line + self.track_array_to_line(track)
+
+        self.save()
 
 
     @staticmethod
@@ -79,7 +83,13 @@ class TracksGen:
     def get_track_array(self, track):
         name = track['name'].encode('utf8')
         mbid = track['mbid'].encode('utf8')
-        artist = track['artist']['name'].encode('utf8')
+        artist = ""
+
+        if 'name' in track['artist']:
+            artist = track['artist']['name'].encode('utf8')
+        else:
+            artist = track['artist']['#text'].encode('utf8')
+
         artist_mbid = track['artist']['mbid'].encode('utf8')
         artist_id = ""
 
@@ -89,10 +99,11 @@ class TracksGen:
         if ((mbid == '') & (name in self.track_names)) | (mbid in self.track_mbids):
             return ""
 
-        if artist_mbid != "":
-            artist_id = self.artist_mbids.index(artist_mbid)
-        else:
-            artist_id = self.artist_names.index(artist)
+        if not self.no_artist_ref:
+            if artist_mbid != "":
+                artist_id = self.artist_mbids.index(artist_mbid)
+            else:
+                artist_id = self.artist_names.index(artist)
 
         self.track_names.extend([name])
         self.track_mbids.extend([mbid])
@@ -100,11 +111,15 @@ class TracksGen:
         return {
             'name': name,
             'mbid': mbid,
+            'artist': artist,
+            'artist_mbid': artist_mbid,
             'artist_ref': str(artist_id),
         }
 
 
     def save(self):
+        helper.ensure_dir(self.SAVE_DIR)
+
         to_write_file = open(self.SAVE_DIR + self.FILENAME, 'w')
 
         to_write_file.write(self.tracks_line)
@@ -122,6 +137,24 @@ class TracksGen:
             for file in files:
                 file_payload = json.load(open(file))
                 tracks = file_payload['toptracks']['track']
+
+                for track in tracks:
+                    track_array = self.get_track_array(track)
+
+                    if track_array == "":
+                        continue
+
+                    all_tracks_array.extend([track_array])
+
+            files = glob(user_dir + "*.json")
+
+        # loop over users recent tracks
+        dirs = np.array(glob(self.FETCHED_DATA + self.USERS_RECENT_TRACKS_LOOP + "/*/"))
+        for user_dir in dirs:
+            files = glob(user_dir + "*.json")
+            for file in files:
+                file_payload = json.load(open(file))
+                tracks = file_payload['recenttracks']['track']
 
                 for track in tracks:
                     track_array = self.get_track_array(track)
@@ -149,6 +182,6 @@ class TracksGen:
         return all_tracks_array
 
 
-a = TracksGen()
-a.compute()
-a.save()
+# tracksGen = TracksGen()
+# tracksGen.compute()
+# tracksGen.save()
