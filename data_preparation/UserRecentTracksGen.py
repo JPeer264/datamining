@@ -1,3 +1,4 @@
+from datetime import datetime
 from glob import glob
 import numpy as np
 import json
@@ -107,24 +108,33 @@ class UserRecentTracksGen:
             tracks_line = self.track_array_to_line("init")
             username = user_dir.split("/")[-2]
             files = glob(user_dir + "*.json")
+            all_tracks = []
 
             for file in files:
                 file_payload = json.load(open(file))
                 tracks = file_payload['recenttracks']['track']
 
-                # todo sort by timestamp
                 for track in tracks:
                     if '@attr' in track:
                         if 'nowplaying' in track['@attr']:
                             continue
 
-                    track_array = self.get_track_array(track)
+                    all_tracks.append(track)
 
-                    if track_array == "":
-                        continue
+            # sort by timestamp
+            all_tracks.sort(
+                key=lambda x: datetime.strptime(x['date']['#text'], '%d %b %Y, %H:%M'),
+                reverse=True,
+            )
 
-                    tracks_line = tracks_line + \
-                        self.track_array_to_line(track_array)
+            for track in all_tracks:
+                track_array = self.get_track_array(track)
+
+                if track_array == "":
+                    continue
+
+                tracks_line = tracks_line + \
+                    self.track_array_to_line(track_array)
 
             self.save(tracks_line, username)
 
