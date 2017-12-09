@@ -190,7 +190,7 @@ class TracksGen:
 
         return all_tracks_array
 
-
-tracksGen = TracksGen()
-tracksGen.compute()
-tracksGen.save()
+if __name__ == '__main__':
+    tracksGen = TracksGen()
+    tracksGen.compute()
+    tracksGen.save()

@@ -8,10 +8,11 @@
 1. Generate Files
     1. `./data_preparation/AristsGen`
     1. `./data_preparation/TracksGen` (depending on `./data/artists.txt`)
-    1. `./data_preparation/UserTracksGen` (depending on `./data/tracks.txt`)
+    1. `./data_preparation/UserRecentTracksGen` (depending on `./data/tracks.txt`)
+    1. `./data_preparation/UserTopTracksGen` (depending on `./data/tracks.txt`)
 
 1. Fetch Data Again
-    1. `./fetcher/fetch_
+    1. `./fetcher/fetch_artists_meta.py` (depending on `./data/artists.txt`)
 
 
 # Notes

@@ -142,6 +142,7 @@ class ArtistsGen:
         return all_artists_array
 
 
-# artistGen = ArtistsGen()
-# artistGen.compute()
-# artistGen.save()
+if __name__ == '__main__':
+    artistGen = ArtistsGen()
+    artistGen.compute()
+    artistGen.save()

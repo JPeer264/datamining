@@ -7,26 +7,25 @@ import csv
 import helper
 
 
-class UserRecentTracksGen:
+class UserTopTracksGen:
     def __init__(self):
         self.tracks_line = ""
         self.track_names = []
         self.track_mbids = []
 
         self.FETCHED_DATA = "./fetched_data/"
-        self.SAVE_DIR = "./data/user_recent_tracks/"
+        self.SAVE_DIR = "./data/user_top_tracks/"
         self.TRACKS_FILE = "./data/tracks.txt"
 
-        self.USER_TRACKS_LOOP = 'user_recent_tracks'
+        self.USER_TRACKS_LOOP = 'user_top_tracks'
 
     def compute_and_save(self):
         self.track_names, self.track_mbids = self.get_all_tracks()
         self.prepare_recent_tracks_and_save()
 
-
     @staticmethod
     def get_track_format():
-        return ["uts", "track_ref"]
+        return ["playcount", "rank", "track_ref"]
 
     def get_all_tracks(self):
         track_names = []
@@ -69,7 +68,8 @@ class UserRecentTracksGen:
     def get_track_array(self, track):
         name = track['name'].encode('utf8')
         mbid = track['mbid'].encode('utf8')
-        uts = track['date']['uts'].encode('utf8')
+        playcount = track['playcount'].encode('utf8')
+        rank = track['@attr']['rank'].encode('utf8')
         track_id = ""
 
         if not mbid == "":
@@ -85,10 +85,10 @@ class UserRecentTracksGen:
             self.track_mbids.extend([name])
 
         return {
-            'uts': uts,
+            'playcount': str(playcount),
+            'rank': str(rank),
             'track_ref': str(track_id),
         }
-
 
     def save(self, tosave, username):
         helper.ensure_dir(self.SAVE_DIR)
@@ -112,33 +112,20 @@ class UserRecentTracksGen:
 
             for file in files:
                 file_payload = json.load(open(file))
-                tracks = file_payload['recenttracks']['track']
+                tracks = file_payload['toptracks']['track']
 
                 for track in tracks:
-                    if '@attr' in track:
-                        if 'nowplaying' in track['@attr']:
-                            continue
+                    track_array = self.get_track_array(track)
 
-                    all_tracks.append(track)
+                    if track_array == "":
+                        continue
 
-            # sort by timestamp
-            all_tracks.sort(
-                key=lambda x: datetime.strptime(x['date']['#text'], '%d %b %Y, %H:%M'),
-                reverse=True,
-            )
-
-            for track in all_tracks:
-                track_array = self.get_track_array(track)
-
-                if track_array == "":
-                    continue
-
-                tracks_line = tracks_line + \
-                    self.track_array_to_line(track_array)
+                    tracks_line = tracks_line + \
+                        self.track_array_to_line(track_array)
 
             self.save(tracks_line, username)
 
 
 if __name__ == '__main__':
-    userRecentTracksGen = UserRecentTracksGen()
-    userRecentTracksGen.compute_and_save()
+    userTopTracksGen = UserTopTracksGen()
+    userTopTracksGen.compute_and_save()
