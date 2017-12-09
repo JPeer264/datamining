@@ -2,7 +2,7 @@ import helper
 
 
 def fetch(page=1):
-    return helper.api_call("method=chart.gettopartists&limit=200&&page={page}".format(page=page))
+    return helper.api_call("method=chart.gettopartists&limit=200&page={page}".format(page=page))
 
 
 def save():
