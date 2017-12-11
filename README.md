@@ -17,6 +17,7 @@
 
 1. Generate Files Again
     1. `./data_preperation/TagsGen.py` (depending on `./fetched_data/artists_meta/*.json`)
+    1. `./data_preperation/FillArtists.py` (depending on `./fetched_data/artists_meta/*.json`)
 
 # Notes
 

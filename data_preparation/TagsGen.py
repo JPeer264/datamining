@@ -32,7 +32,6 @@ class TagsGen:
             self.tags_line = self.tags_line + \
                 self.tag_array_to_line(tag)
 
-        self.save()
 
     @staticmethod
     def get_tag_format():
