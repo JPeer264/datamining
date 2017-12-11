@@ -8,7 +8,7 @@ def fetch(user, page=1):
 
 
 def save(username):
-    this_dir = "./fetched_data /user_top_artists/{username}".format(
+    this_dir = "./fetched_data/user_top_artists/{username}".format(
         username=username)
     user_artists_response = fetch(username)
 
