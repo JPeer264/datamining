@@ -35,10 +35,12 @@ def save():
     helper.ensure_dir(this_dir)
 
     for idx, mbid in enumerate(artist_mbids):
+        print 'Fetch ' + str(idx) + ' of ' + str(len(artist_mbids))
         if not mbid == '':
             artist_response = fetch_mbid(mbid)
         else:
             artist_response = fetch_artist(artist_names[idx])
+
 
         helper.save_json(artist_response, this_dir + "/{idx}.json".format(idx=idx))
 
