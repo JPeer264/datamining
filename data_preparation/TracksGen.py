@@ -2,6 +2,7 @@ from glob import glob
 import numpy as np
 import json
 import csv
+import re
 
 import helper
 
@@ -49,7 +50,10 @@ class TracksGen:
             headers = reader.next()
 
             for row in reader:
-                artist_names.append(row[headers.index("name")])
+                name = row[headers.index("name")]
+                name = re.sub(r'\W*', '', name)
+
+                artist_names.append(name)
                 artist_mbid.append(row[headers.index("mbid")])
 
         return artist_names, artist_mbid
@@ -81,19 +85,20 @@ class TracksGen:
 
 
     def get_track_array(self, track):
-        name = track['name'].encode('utf8')
-        mbid = track['mbid'].encode('utf8')
+        name = track['name']
+        mbid = track['mbid']
         artist = ""
 
         if 'name' in track['artist']:
-            artist = track['artist']['name'].encode('utf8')
+            artist = track['artist']['name']
         else:
-            artist = track['artist']['#text'].encode('utf8')
+            artist = track['artist']['#text']
 
-        artist_mbid = track['artist']['mbid'].encode('utf8')
+        artist = re.sub(r'\W*', '', artist)
+        artist_mbid = track['artist']['mbid']
         artist_id = ""
 
-        # playcount = track['playcount'].encode('utf8')
+        # playcount = track['playcount']
 
         # make sure the track name or mbid exists
         if ((mbid == '') and (name in self.track_names)) or (mbid in self.track_mbids):
@@ -113,11 +118,11 @@ class TracksGen:
             self.track_mbids.extend([name])
 
         return {
-            'name': name,
-            'mbid': mbid,
-            'artist': artist,
-            'artist_mbid': artist_mbid,
-            'artist_ref': str(artist_id),
+            'name': name.encode('utf8'),
+            'mbid': mbid.encode('utf8'),
+            'artist': artist.encode('utf8'),
+            'artist_mbid': artist_mbid.encode('utf8'),
+            'artist_ref': str(artist_id).encode('utf8'),
         }
 
 

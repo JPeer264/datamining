@@ -18,7 +18,7 @@ def save():
     for i in range(0, int(total_user_pages)):
         page = i + 1
 
-        if page == 1 or page > 10:
+        if page == 1 or page > 20:
             continue
 
         tags_response = fetch(page)

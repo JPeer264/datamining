@@ -3,6 +3,7 @@ from glob import glob
 import numpy as np
 import json
 import csv
+import re
 
 import helper
 
@@ -36,7 +37,10 @@ class UserTopTracksGen:
             headers = reader.next()
 
             for row in reader:
-                track_names.append(row[headers.index("name")])
+                name = row[headers.index("name")]
+                name = re.sub(r'\W*', '', name)
+
+                track_names.append(name)
                 track_mbids.append(row[headers.index("mbid")])
 
         return track_names, track_mbids
@@ -68,6 +72,7 @@ class UserTopTracksGen:
     def get_track_array(self, track):
         name = track['name'].encode('utf8')
         mbid = track['mbid'].encode('utf8')
+        name = re.sub(r'\W*', '', name)
         playcount = track['playcount'].encode('utf8')
         rank = track['@attr']['rank'].encode('utf8')
         track_id = ""

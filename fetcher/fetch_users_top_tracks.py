@@ -18,7 +18,7 @@ def save(username):
     for i in range(0, int(total_user_pages)):
         page = i + 1
 
-        if page == 1 or page > 10:
+        if page == 1 or page > 20:
             continue
 
         user_tracks_response = fetch(username, page)
@@ -33,3 +33,17 @@ def save(username):
 
 if __name__ == '__main__':
     save('jpeer264')
+    save('simon_rsp')
+    save('Vian27')
+    save('hajmus')
+    save('djTuff')
+    save('SuperJus10')
+    save('Amidary')
+    save('cedde2001')
+    save('shapeshftersoul')
+    save('HannesderMei')
+    save('kakica84')
+    save('iiayoub')
+    save('thelastamy')
+    save('hearteh')
+    save('divvida')
