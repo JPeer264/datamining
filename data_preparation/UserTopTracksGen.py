@@ -13,20 +13,23 @@ class UserTopTracksGen:
         self.tracks_line = ""
         self.track_names = []
         self.track_mbids = []
+        self.user = []
 
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/user_top_tracks/"
         self.TRACKS_FILE = "./data/tracks.txt"
+        self.USERS_FILE = "./data/users.txt"
 
         self.USER_TRACKS_LOOP = 'user_top_tracks'
 
     def compute_and_save(self):
         self.track_names, self.track_mbids = self.get_all_tracks()
+        self.user = self.get_user_names()
         self.prepare_recent_tracks_and_save()
 
     @staticmethod
     def get_track_format():
-        return ["playcount", "rank", "track_ref"]
+        return ["user_id", "playcount", "rank", "track_ref"]
 
     def get_all_tracks(self):
         track_names = []
@@ -44,6 +47,22 @@ class UserTopTracksGen:
                 track_mbids.append(row[headers.index("mbid")])
 
         return track_names, track_mbids
+
+
+    def get_user_names(self):
+        user = []
+
+        with open(self.USERS_FILE, 'r') as f:
+            reader = csv.reader(f, delimiter='\t')
+            headers = reader.next()
+
+            for row in reader:
+                name = row[headers.index("name")]
+
+                user.append(name)
+
+        return user
+
 
     def track_array_to_line(self, track="init"):
         track_format = self.get_track_format()
@@ -69,7 +88,7 @@ class UserTopTracksGen:
 
         return line + "\n"
 
-    def get_track_array(self, track):
+    def get_track_array(self, track, username):
         name = track['name'].encode('utf8')
         mbid = track['mbid'].encode('utf8')
         name = re.sub(r'\W*', '', name)
@@ -90,6 +109,7 @@ class UserTopTracksGen:
             self.track_mbids.extend([name])
 
         return {
+            'user_id': str(self.user.index(username)),
             'playcount': str(playcount),
             'rank': str(rank),
             'track_ref': str(track_id),
@@ -120,7 +140,7 @@ class UserTopTracksGen:
                 tracks = file_payload['toptracks']['track']
 
                 for track in tracks:
-                    track_array = self.get_track_array(track)
+                    track_array = self.get_track_array(track, username)
 
                     if track_array == "":
                         continue

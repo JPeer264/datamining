@@ -24,7 +24,6 @@
 
 - Check how long the users heard a song. Based on that, the song (and its genre/tag) have another weight
 
-
 ## Hints
 
 - Skips, anhand von timestamps
@@ -32,3 +31,4 @@
 - LatentDirichletAllocation (LDA)
 - [sklearn.manifold](http://scikit-learn.org/stable/modules/classes.html#module-sklearn.manifold) (bissi experimentieren, ersten 3 und TSNE)
 - Zeitfenster Months, Charts ausrechnen, Daten von allen Usern
+- Diversity / entropy von Genres

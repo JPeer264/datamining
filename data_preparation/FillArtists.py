@@ -2,6 +2,7 @@ from glob import glob
 import numpy as np
 import json
 import csv
+import re
 
 import helper
 from ArtistsGen import ArtistsGen
@@ -12,16 +13,21 @@ class FillArtists:
         self.artists = []
         self.artist_names = []
         self.artist_mbids = []
+        self.tag_to_artist = {}
 
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/"
+        self.TAGS_FILE = self.SAVE_DIR + "tags.txt"
         self.FILENAME = "artists.txt"
+        self.FILENAME_TAGS = "artists_with_tags.txt"
         self.ARTISTS_META = 'artists_meta'
         self.ARTISTS_FILE = self.SAVE_DIR + self.FILENAME
 
     def compute(self):
         self.artists, self.artist_names, self.artist_mbids = self.get_all_artists()
         self.artists_line = self.artist_array_to_line("init")
+        self.artists_tags_line = "artist_ref\ttags_refs\n"
+        self.get_tags()
         all_artists = self.prepare_artists()
 
         for artist in self.artists:
@@ -29,6 +35,8 @@ class FillArtists:
             name = artist['name']
             artist_to_merge = {}
 
+            ##
+            # fill artists
             if (not mbid == '') and (mbid in all_artists):
                 artist_to_merge = all_artists[mbid]
 
@@ -42,6 +50,29 @@ class FillArtists:
             self.artists_line = self.artists_line + \
                 self.artist_array_to_line(artist_copy)
 
+            idx = -1
+
+            if (not mbid == '') and (mbid in self.artist_mbids):
+                idx = self.artist_mbids.index(mbid)
+
+            # not found but also name not in all_artists // --> no file found
+            if (not name == '') and (name in self.artist_mbids):
+                idx = self.artist_mbids.index(name)
+
+
+            ##
+            # artist tags
+            if (not mbid == '') and (mbid in self.tag_to_artist):
+                artist_tags = self.tag_to_artist[mbid]
+
+            # not found but also name not in all_artists // --> no file found
+            if (not name == '') and (name in self.tag_to_artist):
+                artist_tags = self.tag_to_artist[name]
+
+            if not idx == -1:
+                self.artists_tags_line = self.artists_tags_line + \
+                    str(idx) + artist_tags + "\n"
+
 
     @staticmethod
     def get_artist_format():
@@ -50,6 +81,52 @@ class FillArtists:
         artists_format.extend(['listeners', 'playcount'])
 
         return artists_format
+
+
+    def get_tags(self):
+        tag_ids = []
+        tag_names = []
+
+        with open(self.TAGS_FILE, 'r') as f:
+            reader = csv.reader(f, delimiter='\t')
+            headers = reader.next()
+            count = 0
+
+            for row in reader:
+                tag_ids.append(count)
+                tag_names.append(row[headers.index("name")])
+                count = count + 1
+
+        self.tag_ids = tag_ids
+        self.tag_names = tag_names
+
+
+    def normalize_tags(self, tags, name, mbid):
+        result = ""
+
+        if len(tags) <= 0:
+            return
+
+        for tag in tags:
+            name = tag['name']
+            name = name.lower()
+            name = re.sub(r'\W*', '', name)
+
+            if name == "":
+                continue
+
+            result = result + "\t" + str(self.tag_names.index(name))
+
+        key = name
+
+        if not mbid == '':
+            key = mbid
+
+        if key == "":
+            return
+
+        self.tag_to_artist[key] = result
+
 
     def get_all_artists(self):
         artists_format = ArtistsGen.get_artist_format()
@@ -84,14 +161,7 @@ class FillArtists:
         if 'mbid' in artist:
             mbid = artist['mbid'].encode('utf8')
 
-        # name = name.lower()
-        # name = re.sub(r'\W*', '', name)
-
-        # # make sure the artist name exists
-        # if name in self.artist_names:
-        #     return ""
-
-        # self.artist_names.extend([name])
+        self.normalize_tags(artist['tags']['tag'], name, mbid)
 
         return {
             'name': name,
@@ -129,7 +199,6 @@ class FillArtists:
     def prepare_artists(self):
         all_artist_object = {}
 
-        # loop over users top tags
         files = glob(self.FETCHED_DATA + self.ARTISTS_META + "/*.json")
 
         for file in files:
@@ -159,7 +228,17 @@ class FillArtists:
         to_write_file.close()
 
 
+    def saveTags(self):
+        helper.ensure_dir(self.SAVE_DIR)
+
+        to_write_file = open(self.SAVE_DIR + self.FILENAME_TAGS, 'w')
+
+        to_write_file.write(self.artists_tags_line)
+        to_write_file.close()
+
+
 if __name__ == '__main__':
     fillArtists = FillArtists()
     fillArtists.compute()
     fillArtists.save()
+    fillArtists.saveTags()

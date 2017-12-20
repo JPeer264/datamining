@@ -81,6 +81,9 @@ class TagsGen:
         name = name.lower()
         name = re.sub(r'\W*', '', name)
 
+        if name == "":
+            return ""
+
         # make sure the tag name exists
         if name in self.tag_names:
             return ""
@@ -137,7 +140,6 @@ class TagsGen:
                     continue
 
                 all_tags_array.extend([tag_array])
-
 
         return all_tags_array
 

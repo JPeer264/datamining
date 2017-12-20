@@ -1,5 +1,6 @@
-import helper
+import csv
 
+import helper
 
 def fetch(user, page=1):
     return helper.api_call(
@@ -34,18 +35,11 @@ def save(username):
         )
 
 if __name__ == '__main__':
-    save('jpeer264')
-    save('simon_rsp')
-    save('Vian27')
-    save('hajmus')
-    save('djTuff')
-    save('SuperJus10')
-    save('Amidary')
-    save('cedde2001')
-    save('shapeshftersoul')
-    save('HannesderMei')
-    save('kakica84')
-    save('iiayoub')
-    save('thelastamy')
-    save('hearteh')
-    save('divvida')
+    with open('./data/users.txt', 'r') as f:
+        reader = csv.reader(f, delimiter='\t')
+        headers = reader.next()
+
+        for row in reader:
+            name = row[headers.index("name")]
+
+            save(name)

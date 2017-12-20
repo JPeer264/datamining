@@ -9,6 +9,7 @@ import helper
 class TracksGen:
     def __init__(self, no_artist_ref = False):
         self.tracks_line = ""
+        self.top_tracks_line = ""
         self.track_names = []
         self.track_mbids = []
         self.artist_names = []
@@ -18,6 +19,7 @@ class TracksGen:
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/"
         self.FILENAME = "tracks.txt"
+        self.FILENAME_TOP_TRACKS = "top_tracks.txt"
         self.ARTISTS_FILE = self.SAVE_DIR + "artists.txt"
 
         self.USER_TRACKS_LOOP = 'user_top_tracks'
@@ -26,14 +28,21 @@ class TracksGen:
 
 
     def compute(self):
+        track_format = []
+        track_format.extend(self.get_track_format())
+        track_format_two = ['track_id', 'listeners', 'playcount', 'duration']
+
         self.artist_names, self.artist_mbids = self.get_all_artists()
-        self.tracks_line = self.track_array_to_line("init")
-        all_tracks = self.prepare_tracks()
+        self.tracks_line = self.track_array_to_line("init", track_format)
+        self.top_tracks_line = self.track_array_to_line("init", track_format_two)
+        all_tracks, top_tracks = self.prepare_tracks()
 
         for track in all_tracks:
-            self.tracks_line = self.tracks_line + self.track_array_to_line(track)
+            self.tracks_line = self.tracks_line + self.track_array_to_line(track, track_format)
 
-        self.save()
+        for track in top_tracks:
+            self.top_tracks_line = self.top_tracks_line + \
+                self.track_array_to_line(track, track_format_two)
 
 
     @staticmethod
@@ -59,8 +68,7 @@ class TracksGen:
         return artist_names, artist_mbid
 
 
-    def track_array_to_line(self, track="init"):
-        track_format = self.get_track_format()
+    def track_array_to_line(self, track="init", track_format=[]):
         line = ""
 
         if track == "":
@@ -134,16 +142,51 @@ class TracksGen:
         to_write_file.write(self.tracks_line)
         to_write_file.close()
 
+    def save_top_tracks(self):
+        helper.ensure_dir(self.SAVE_DIR)
+
+        to_write_file = open(self.SAVE_DIR + self.FILENAME_TOP_TRACKS, 'w')
+
+        to_write_file.write(self.top_tracks_line)
+        to_write_file.close()
+
 
     def prepare_tracks(self):
         # loop over users top tracks
         all_tracks_array = []
+        top_tracks_array = []
+
+        # loop over top tracks
+        files = glob(self.FETCHED_DATA + self.TOP_TRACKS_LOOP + "/*.json")
+
+        for idx, file in enumerate(files):
+            print str(idx) + ' of ' + str(len(files)) + ' ## ' + file
+            file_payload = json.load(open(file))
+            tracks = file_payload['tracks']['track']
+
+            for track in tracks:
+                track_array = self.get_track_array(track)
+
+                if track_array == "":
+                    continue
+
+                top_track = {}
+                top_track['track_id'] = str(len(all_tracks_array))
+                top_track['listeners'] = track['listeners']
+                top_track['playcount'] = track['playcount']
+                top_track['duration'] = track['duration']
+                top_tracks_array.extend([top_track])
+                all_tracks_array.extend([track_array])
+
+        # loop over user_tracks
         dirs = np.array(glob(self.FETCHED_DATA + self.USER_TRACKS_LOOP + "/*/"))
 
-        for user_dir in dirs:
+        for idx, user_dir in enumerate(dirs):
             files = glob(user_dir + "*.json")
 
-            for file in files:
+            for idx_inner, file in enumerate(files):
+                print str(idx) + ' of ' + str(len(dirs)) + ' ## ' + user_dir
+                print str(idx_inner) + ' of ' + str(len(files)) + ' ## ' + file
                 file_payload = json.load(open(file))
                 tracks = file_payload['toptracks']['track']
 
@@ -160,9 +203,11 @@ class TracksGen:
         # loop over users recent tracks
         dirs = np.array(glob(self.FETCHED_DATA + self.USERS_RECENT_TRACKS_LOOP + "/*/"))
 
-        for user_dir in dirs:
+        for idx, user_dir in enumerate(dirs):
             files = glob(user_dir + "*.json")
-            for file in files:
+            for idx_inner, file in enumerate(files):
+                print str(idx) + ' of ' + str(len(dirs)) + ' ## ' + user_dir
+                print str(idx_inner) + ' of ' + str(len(files)) + ' ## ' + file
                 file_payload = json.load(open(file))
                 tracks = file_payload['recenttracks']['track']
 
@@ -178,24 +223,10 @@ class TracksGen:
 
                     all_tracks_array.extend([track_array])
 
-        # loop over top tracks
-        files = glob(self.FETCHED_DATA + self.TOP_TRACKS_LOOP + "/*.json")
-
-        for file in files:
-            file_payload = json.load(open(file))
-            tracks = file_payload['tracks']['track']
-
-            for track in tracks:
-                track_array = self.get_track_array(track)
-
-                if track_array == "":
-                    continue
-
-                all_tracks_array.extend([track_array])
-
-        return all_tracks_array
+        return all_tracks_array, top_tracks_array
 
 if __name__ == '__main__':
     tracksGen = TracksGen()
     tracksGen.compute()
     tracksGen.save()
+    tracksGen.save_top_tracks()
