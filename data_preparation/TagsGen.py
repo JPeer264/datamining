@@ -10,6 +10,7 @@ import helper
 class TagsGen:
     def __init__(self, no_artist_ref=False):
         self.tags_line = ""
+        self.top_tags_line = ""
         self.tag_names = []
         self.artist_names = []
         self.artist_mbids = []
@@ -18,6 +19,7 @@ class TagsGen:
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/"
         self.FILENAME = "tags.txt"
+        self.FILENAME_TOP_TAGS = "top_tags.txt"
         self.TOP_TAGS = 'top_tags'
         self.ARTISTS_META = 'artists_meta'
         self.ARTISTS_FILE = self.SAVE_DIR + "artists.txt"
@@ -25,12 +27,17 @@ class TagsGen:
 
     def compute(self):
         self.artist_names, self.artist_mbids = self.get_all_artists()
-        self.tags_line = self.tag_array_to_line("init")
-        all_tags = self.prepare_tags()
+        self.tags_line = self.tag_array_to_line("init", self.get_tag_format())
+        self.top_tags_line = self.tag_array_to_line("init", ['tag_ref', 'reach', 'taggings'])
+        all_tags, top_tags = self.prepare_tags()
 
         for tag in all_tags:
             self.tags_line = self.tags_line + \
-                self.tag_array_to_line(tag)
+                self.tag_array_to_line(tag, self.get_tag_format())
+
+        for tag in top_tags:
+            self.top_tags_line = self.top_tags_line + \
+                self.tag_array_to_line(tag, ['tag_ref', 'reach', 'taggings'])
 
 
     @staticmethod
@@ -51,8 +58,7 @@ class TagsGen:
 
         return artist_names, artist_mbid
 
-    def tag_array_to_line(self, tag="init"):
-        tag_format = self.get_tag_format()
+    def tag_array_to_line(self, tag="init", tag_format=[]):
         line = ""
 
         if tag == "":
@@ -104,8 +110,18 @@ class TagsGen:
         to_write_file.close()
 
 
+    def save_top_tags(self):
+        helper.ensure_dir(self.SAVE_DIR)
+
+        to_write_file = open(self.SAVE_DIR + self.FILENAME_TOP_TAGS, 'w')
+
+        to_write_file.write(self.top_tags_line)
+        to_write_file.close()
+
+
     def prepare_tags(self):
         all_tags_array = []
+        top_tags_array = []
 
         # loop over users top tags
         files = glob(self.FETCHED_DATA + self.TOP_TAGS + "/*.json")
@@ -119,6 +135,12 @@ class TagsGen:
 
                 if tag_array == "":
                     continue
+
+                top_tags = {}
+                top_tags['tag_ref'] = str(len(all_tags_array))
+                top_tags['reach'] = str(tag['reach'])
+                top_tags['taggings'] = str(tag['taggings'])
+                top_tags_array.extend([top_tags])
 
                 all_tags_array.extend([tag_array])
 
@@ -141,10 +163,11 @@ class TagsGen:
 
                 all_tags_array.extend([tag_array])
 
-        return all_tags_array
+        return all_tags_array, top_tags_array
 
 
 if __name__ == '__main__':
     tagsGen = TagsGen()
     tagsGen.compute()
     tagsGen.save()
+    tagsGen.save_top_tags()
