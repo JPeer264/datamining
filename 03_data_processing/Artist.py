@@ -41,6 +41,9 @@ class Artist:
 
 
     def get_artist_tags(self, artist_ref):
+        if not artist_ref in self.artits_with_tags:
+            return []
+
         return self.artits_with_tags[artist_ref]
 
 
