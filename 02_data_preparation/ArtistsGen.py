@@ -1,6 +1,10 @@
 from glob import glob
 import numpy as np
-import json
+
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 import helper
 from TracksGen import TracksGen
@@ -108,13 +112,14 @@ class ArtistsGen:
 
 
     def prepare_artists(self):
-        all_artists_array = []
-        top_artists_array = []
+        all_artists_array = np.array([])
+        top_artists_array = np.array([])
 
         # loop over top artists
         files = glob(self.FETCHED_DATA + self.TOP_ARTISTS_LOOP + "/*.json")
 
-        for file in files:
+        for idx, file in enumerate(files):
+            print str(idx) + ' of ' + str(len(files)) + ' ## ' + file
             file_payload = json.load(open(file))
             artists = file_payload['artists']['artist']
 
@@ -128,17 +133,27 @@ class ArtistsGen:
                 top_artist['artist_ref'] = str(len(all_artists_array))
                 top_artist['listeners'] = artist['listeners']
                 top_artist['playcount'] = artist['playcount']
-                top_artists_array.extend([top_artist])
-                all_artists_array.extend([artist_array])
+
+                if len(top_artists_array) == 0:
+                    top_artists_array = np.array([top_artist])
+                else:
+                    top_artists_array = np.append(top_artists_array, [top_artist], axis=0)
+
+                if len(all_artists_array) == 0:
+                    all_artists_array = np.array([artist_array])
+                else:
+                    all_artists_array = np.append(all_artists_array, [artist_array], axis=0)
 
         # loop over users top artists
         dirs = np.array(
             glob(self.FETCHED_DATA + self.USER_ARTISTS_LOOP + "/*/"))
 
-        for user_dir in dirs:
+        for idx, user_dir in enumerate(dirs):
             files = glob(user_dir + "*.json")
 
-            for file in files:
+            for idx_inner, file in enumerate(files):
+                print str(idx) + ' of ' + str(len(dirs)) + ' ## ' + user_dir
+                print str(idx_inner) + ' of ' + str(len(files)) + ' ## ' + file
                 file_payload = json.load(open(file))
                 artists = file_payload['topartists']['artist']
 
@@ -148,13 +163,21 @@ class ArtistsGen:
                     if artist_array == "":
                         continue
 
-                    all_artists_array.extend([artist_array])
+                    if len(all_artists_array) == 0:
+                        all_artists_array = np.array([artist_array])
+                    else:
+                        all_artists_array = np.append(all_artists_array, [artist_array], axis=0)
 
 
         # loop over all tracks from user
         # missing artists could be in there as well
         if self.all_tracks != []:
-            for track in self.all_tracks:
+            for idx, track in enumerate(self.all_tracks):
+                print 'Missing tracks: ' + str(idx) + ' of ' + str(len(self.all_tracks))
+
+                if track["artist"] == "":
+                    continue
+
                 artist_array = self.get_artist_array({
                     "name": track["artist"].decode('utf8'),
                     "mbid": track["artist_mbid"].decode('utf8'),
@@ -163,7 +186,10 @@ class ArtistsGen:
                 if artist_array == "":
                     continue
 
-                all_artists_array.extend([artist_array])
+                if len(all_artists_array) == 0:
+                    all_artists_array = np.array([artist_array])
+                else:
+                    all_artists_array = np.append(all_artists_array, [artist_array], axis=0)
 
         return all_artists_array, top_artists_array
 

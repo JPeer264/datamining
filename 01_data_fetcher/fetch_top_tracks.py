@@ -2,7 +2,7 @@ import helper
 
 
 def fetch(page=1):
-    return helper.api_call("method=chart.gettoptracks&limit=200&&page={page}".format(page=page))
+    return helper.api_call("method=chart.gettoptracks&limit=500&&page={page}".format(page=page))
 
 
 def save():
@@ -15,20 +15,20 @@ def save():
 
     helper.save_json(tracks_response, this_dir + "/page_1.json")
 
-    for i in range(0, int(total_user_pages)):
-        page = i + 1
+    # for i in range(0, int(total_user_pages)):
+    #     page = i + 1
 
-        if page == 1 or page > 3:
-            continue
+    #     if page == 1 or page > 3:
+    #         continue
 
-        tracks_response = fetch(page)
-        current_page = tracks_response['tracks']['@attr']['page']
+    #     tracks_response = fetch(page)
+    #     current_page = tracks_response['tracks']['@attr']['page']
 
-        helper.save_json(
-            tracks_response,
-            "{this_dir}/page_{page}.json".format(
-                this_dir=this_dir, page=current_page)
-        )
+    #     helper.save_json(
+    #         tracks_response,
+    #         "{this_dir}/page_{page}.json".format(
+    #             this_dir=this_dir, page=current_page)
+    #     )
 
 
 if __name__ == '__main__':

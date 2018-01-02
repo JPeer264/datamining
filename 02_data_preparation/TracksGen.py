@@ -1,8 +1,12 @@
 from glob import glob
 import numpy as np
-import json
 import csv
 import re
+
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 import helper
 
@@ -153,8 +157,8 @@ class TracksGen:
 
     def prepare_tracks(self):
         # loop over users top tracks
-        all_tracks_array = []
-        top_tracks_array = []
+        all_tracks_array = np.array([])
+        top_tracks_array = np.array([])
 
         # loop over top tracks
         files = glob(self.FETCHED_DATA + self.TOP_TRACKS_LOOP + "/*.json")
@@ -175,8 +179,16 @@ class TracksGen:
                 top_track['listeners'] = track['listeners']
                 top_track['playcount'] = track['playcount']
                 top_track['duration'] = track['duration']
-                top_tracks_array.extend([top_track])
-                all_tracks_array.extend([track_array])
+
+                if len(top_tracks_array) == 0:
+                    top_tracks_array = np.array([top_track])
+                else:
+                    top_tracks_array = np.append(top_tracks_array, [top_track], axis=0)
+
+                if len(all_tracks_array) == 0:
+                    all_tracks_array = np.array([track_array])
+                else:
+                    all_tracks_array = np.append(all_tracks_array, [track_array], axis=0)
 
         # loop over user_tracks
         dirs = np.array(glob(self.FETCHED_DATA + self.USER_TRACKS_LOOP + "/*/"))
@@ -196,7 +208,10 @@ class TracksGen:
                     if track_array == "":
                         continue
 
-                    all_tracks_array.extend([track_array])
+                    if len(all_tracks_array) == 0:
+                        all_tracks_array = np.array([track_array])
+                    else:
+                        all_tracks_array = np.append(all_tracks_array, [track_array], axis=0)
 
             files = glob(user_dir + "*.json")
 
@@ -221,7 +236,10 @@ class TracksGen:
                     if track_array == "":
                         continue
 
-                    all_tracks_array.extend([track_array])
+                    if len(all_tracks_array) == 0:
+                        all_tracks_array = np.array([track_array])
+                    else:
+                        all_tracks_array = np.append(all_tracks_array, [track_array], axis=0)
 
         return all_tracks_array, top_tracks_array
 

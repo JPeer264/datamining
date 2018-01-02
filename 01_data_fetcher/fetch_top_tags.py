@@ -2,7 +2,7 @@ import helper
 
 
 def fetch(page=1):
-    return helper.api_call("method=chart.gettoptags&limit=200&&page={page}".format(page=page))
+    return helper.api_call("method=chart.gettoptags&limit=500&&page={page}".format(page=page))
 
 
 def save():
@@ -15,20 +15,20 @@ def save():
 
     helper.save_json(tags_response, this_dir + "/page_1.json")
 
-    for i in range(0, int(total_user_pages)):
-        page = i + 1
+    # for i in range(0, int(total_user_pages)):
+    #     page = i + 1
 
-        if page == 1 or page > 20:
-            continue
+    #     if page == 1 or page > 20:
+    #         continue
 
-        tags_response = fetch(page)
-        current_page = tags_response['tags']['@attr']['page']
+    #     tags_response = fetch(page)
+    #     current_page = tags_response['tags']['@attr']['page']
 
-        helper.save_json(
-            tags_response,
-            "{this_dir}/page_{page}.json".format(
-                this_dir=this_dir, page=current_page)
-        )
+    #     helper.save_json(
+    #         tags_response,
+    #         "{this_dir}/page_{page}.json".format(
+    #             this_dir=this_dir, page=current_page)
+    #     )
 
 
 if __name__ == '__main__':
