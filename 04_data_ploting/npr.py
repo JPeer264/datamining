@@ -10,20 +10,14 @@ import sklearn.metrics.pairwise as pair_dist
 
 
 class NPR:
-    def __init__(self, file_name='top_tags-user_top_artists.txt'):
+    def __init__(self, file_name='top_artists-user_top_artists.txt'):
         self.DATA_DIR = './data_processed/'
         self.FEATURES_FILE = self.DATA_DIR + file_name
         self.OUTPUT_VISU_DIR = './visualizations/'
 
 
-    def train(self):
-        raw_data = np.loadtxt(self.FEATURES_FILE, dtype='str', delimiter='\t')
-
-        self.labels = raw_data[1:, 0]
-        self.header = raw_data[0, 1:]
-        self.data = np.delete(np.delete(raw_data, 0, 0), 0, 1).astype(np.float)  # remove header, and left column
-
-        perp = 10.0
+    @staticmethod
+    def train_tsne(data, perp=10.0):
         tsne = TSNE(
             n_components=2,
             verbose=0,
@@ -40,7 +34,17 @@ class NPR:
             angle=0.5
         )
 
-        self.Y = tsne.fit_transform(self.data)
+        return tsne.fit_transform(data)
+
+
+    def train(self):
+        raw_data = np.loadtxt(self.FEATURES_FILE, dtype='str', delimiter='\t')
+
+        self.labels = raw_data[1:, 0]
+        self.header = raw_data[0, 1:]
+        self.data = np.delete(np.delete(raw_data, 0, 0), 0, 1).astype(np.float)  # remove header, and left column
+
+        self.Y = self.train_tsne(self.data)
 
 
     def plot_tsne(self):
