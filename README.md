@@ -7,7 +7,8 @@
     1. `./01_data_fetcher/fetch_users_top_tracks.py`
 
 1. Generate Files
-    1. `./02_data_preparation/AristsGen.py`
+    1. `./02_data_preparation/UsersGen.py`
+    1. `./02_data_preparation/AristsGen.py` (depending on `./data/users.txt`)
     1. `./02_data_preparation/TracksGen.py` (depending on `./data/artists.txt`)
     1. `./02_data_preparation/UserRecentTracksGen.py` (depending on `./data/tracks.txt`)
     1. `./02_data_preparation/UserTopTracksGen.py` (depending on `./data/tracks.txt`)

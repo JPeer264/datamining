@@ -7,20 +7,6 @@ LASTFM_API_KEY = "8aa5abf299b1aaf6e4758f6ce3dc2fcf"
 LASTFM_API_URL = "http://ws.audioscrobbler.com/2.0/"
 
 
-def read_csv(file):
-    data = []
-    with open(file, 'r') as f:
-        reader = csv.reader(f, delimiter='\t')
-        headers = reader.next()
-
-        for row in reader:
-            item = row[0]
-            data.append(item)
-
-    return data
-# /read_csv
-
-
 def api_call(apiString):
     """
     triggers an api to the user api

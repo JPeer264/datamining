@@ -1,5 +1,6 @@
 from glob import glob
 import numpy as np
+import re
 
 try:
     import ujson as json
@@ -15,8 +16,7 @@ class ArtistsGen:
         self.artists_line = ""
         self.top_artists_line = ""
         self.all_tracks = []
-        self.artist_names = []
-        self.artist_mbid = []
+        self.max_users = 30000
 
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/"
@@ -28,6 +28,7 @@ class ArtistsGen:
 
     def compute(self):
         tracksGen = TracksGen(True)
+        tracksGen.prepare_users()
 
         self.all_tracks, top_tracks = tracksGen.prepare_tracks()
         self.artists_line = self.artist_array_to_line(
@@ -36,11 +37,13 @@ class ArtistsGen:
             "init", ['artist_ref', 'listeners', 'playcount'])
         all_artists, top_artists = self.prepare_artists()
 
-        for artist in all_artists:
+        for idx, artist in enumerate(all_artists):
+            print str(idx) + ' of ' + str(len(all_artists)) + ' ## all_artists'
             self.artists_line = self.artists_line + \
                 self.artist_array_to_line(artist, self.get_artist_format())
 
-        for artist in top_artists:
+        for idx, artist in enumerate(top_artists):
+            print str(idx) + ' of ' + str(len(top_artists)) + ' ## top_artists'
             self.top_artists_line = self.top_artists_line + \
                 self.artist_array_to_line(artist, ['artist_ref', 'listeners', 'playcount'])
 
@@ -55,7 +58,7 @@ class ArtistsGen:
             return ""
 
         for i, entry in enumerate(artist_format):
-            temp_line = "\t"
+            temp_line = "%"
 
             if i == 0:
                 temp_line = ""
@@ -65,7 +68,7 @@ class ArtistsGen:
             if artist == "init":
                 name = entry
             else:
-                name = artist[entry]
+                name = re.sub(r'%*', '', artist[entry])
 
             line = line + temp_line + name
 
@@ -74,19 +77,6 @@ class ArtistsGen:
     def get_artist_array(self, artist):
         name = artist['name'].encode('utf8')
         mbid = artist['mbid'].encode('utf8')
-
-        # playcount = artist['playcount'].encode('utf8')
-
-        # make sure the artist name or mbid exists
-        if ((mbid == '') and (name in self.artist_names)) or (mbid in self.artist_mbid):
-            return ""
-
-        self.artist_names.extend([name])
-
-        if not mbid == '':
-            self.artist_mbid.extend([mbid])
-        else:
-            self.artist_mbid.extend([name])
 
         return {
             'name': name,
@@ -112,13 +102,16 @@ class ArtistsGen:
 
 
     def prepare_artists(self):
-        all_artists_array = np.array([])
-        top_artists_array = np.array([])
+        all_artists_dict = {}
+        top_artists_dict = {}
 
         # loop over top artists
         files = glob(self.FETCHED_DATA + self.TOP_ARTISTS_LOOP + "/*.json")
 
         for idx, file in enumerate(files):
+            if idx > self.max_users:
+                continue
+
             print str(idx) + ' of ' + str(len(files)) + ' ## ' + file
             file_payload = json.load(open(file))
             artists = file_payload['artists']['artist']
@@ -130,25 +123,26 @@ class ArtistsGen:
                     continue
 
                 top_artist = {}
-                top_artist['artist_ref'] = str(len(all_artists_array))
+                top_artist['artist_ref'] = str(len(all_artists_dict.values()))
                 top_artist['listeners'] = artist['listeners']
                 top_artist['playcount'] = artist['playcount']
 
-                if len(top_artists_array) == 0:
-                    top_artists_array = np.array([top_artist])
+                if not artist_array['mbid'] == '':
+                    name = artist_array['mbid']
                 else:
-                    top_artists_array = np.append(top_artists_array, [top_artist], axis=0)
+                    name = artist_array['name']
 
-                if len(all_artists_array) == 0:
-                    all_artists_array = np.array([artist_array])
-                else:
-                    all_artists_array = np.append(all_artists_array, [artist_array], axis=0)
+                top_artists_dict[name] = top_artist
+                all_artists_dict[name] = artist_array
 
         # loop over users top artists
         dirs = np.array(
             glob(self.FETCHED_DATA + self.USER_ARTISTS_LOOP + "/*/"))
 
         for idx, user_dir in enumerate(dirs):
+            if idx > self.max_users:
+                continue
+
             files = glob(user_dir + "*.json")
 
             for idx_inner, file in enumerate(files):
@@ -160,13 +154,12 @@ class ArtistsGen:
                 for artist in artists:
                     artist_array = self.get_artist_array(artist)
 
-                    if artist_array == "":
-                        continue
-
-                    if len(all_artists_array) == 0:
-                        all_artists_array = np.array([artist_array])
+                    if not artist_array['mbid'] == '':
+                        name = artist_array['mbid']
                     else:
-                        all_artists_array = np.append(all_artists_array, [artist_array], axis=0)
+                        name = artist_array['name']
+
+                    all_artists_dict[name] = artist_array
 
 
         # loop over all tracks from user
@@ -183,15 +176,14 @@ class ArtistsGen:
                     "mbid": track["artist_mbid"].decode('utf8'),
                 })
 
-                if artist_array == "":
-                    continue
-
-                if len(all_artists_array) == 0:
-                    all_artists_array = np.array([artist_array])
+                if not artist_array['mbid'] == '':
+                    name = artist_array['mbid']
                 else:
-                    all_artists_array = np.append(all_artists_array, [artist_array], axis=0)
+                    name = artist_array['name']
 
-        return all_artists_array, top_artists_array
+                all_artists_dict[name] = artist_array
+
+        return all_artists_dict.values(), top_artists_dict.values()
 
 
 if __name__ == '__main__':

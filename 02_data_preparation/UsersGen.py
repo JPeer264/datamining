@@ -17,8 +17,13 @@ def prepare_users():
   helper.ensure_dir(SAVE_DIR)
 
   file = open(SAVE_DIR + FILENAME, "w")
+  file.write('name\n')
 
   for user in all_users(dirs):
-    file.write(user)
+    file.write(user + '\n')
 
   file.close()
+
+
+if __name__ == '__main__':
+  prepare_users()

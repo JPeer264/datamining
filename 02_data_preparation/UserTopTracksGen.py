@@ -14,6 +14,7 @@ class UserTopTracksGen:
         self.track_names = []
         self.track_mbids = []
         self.user = []
+        self.max_users = 30000
 
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/user_top_tracks/"
@@ -36,7 +37,7 @@ class UserTopTracksGen:
         track_mbids = []
 
         with open(self.TRACKS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
 
             for row in reader:
@@ -53,7 +54,7 @@ class UserTopTracksGen:
         user = []
 
         with open(self.USERS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
 
             for row in reader:
@@ -72,7 +73,7 @@ class UserTopTracksGen:
             return ""
 
         for i, entry in enumerate(track_format):
-            temp_line = "\t"
+            temp_line = "%"
 
             if i == 0:
                 temp_line = ""
@@ -82,7 +83,7 @@ class UserTopTracksGen:
             if track == "init":
                 name = entry
             else:
-                name = track[entry]
+                name = re.sub(r'%*', '', track[entry])
 
             line = line + temp_line + name
 
@@ -96,17 +97,13 @@ class UserTopTracksGen:
         rank = track['@attr']['rank'].encode('utf8')
         track_id = ""
 
-        if not mbid == "":
+        try:
             track_id = self.track_mbids.index(mbid)
-        else:
-            track_id = self.track_names.index(name)
-
-        self.track_names.extend([name])
-
-        if not mbid == '':
-            self.track_mbids.extend([mbid])
-        else:
-            self.track_mbids.extend([name])
+        except ValueError:
+            try:
+                track_id = self.track_names.index(name)
+            except ValueError:
+                pass
 
         return {
             'user_id': str(self.user.index(username)),
@@ -126,13 +123,15 @@ class UserTopTracksGen:
     def prepare_recent_tracks_and_save(self):
         # loop over users top tracks
         all_tracks_array = []
-        dirs = np.array(
-            glob(self.FETCHED_DATA + self.USER_TRACKS_LOOP + "/*/"))
 
-        for user_dir in dirs:
+        for idx, user in enumerate(self.user):
+            if idx > self.max_users:
+                continue
+
+            print str(idx) + ' of ' + str(len(self.user)) + " ## " + user
             tracks_line = self.track_array_to_line("init")
-            username = user_dir.split("/")[-2]
-            files = glob(user_dir + "*.json")
+            user_dir = self.FETCHED_DATA + self.USER_TRACKS_LOOP + "/" + user
+            files = glob(user_dir + "/*.json")
             all_tracks = []
 
             for file in files:
@@ -140,15 +139,12 @@ class UserTopTracksGen:
                 tracks = file_payload['toptracks']['track']
 
                 for track in tracks:
-                    track_array = self.get_track_array(track, username)
-
-                    if track_array == "":
-                        continue
+                    track_array = self.get_track_array(track, user)
 
                     tracks_line = tracks_line + \
                         self.track_array_to_line(track_array)
 
-            self.save(tracks_line, username)
+            self.save(tracks_line, user)
 
 
 if __name__ == '__main__':

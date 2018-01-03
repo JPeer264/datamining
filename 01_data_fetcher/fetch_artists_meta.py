@@ -1,5 +1,6 @@
 from glob import glob
 import csv
+import sys
 
 import helper
 
@@ -35,6 +36,9 @@ def save():
     helper.ensure_dir(this_dir)
 
     for idx, mbid in enumerate(artist_mbids):
+        if idx < int(sys.argv[1]):
+            continue
+
         print 'Fetch ' + str(idx) + ' of ' + str(len(artist_mbids))
         if not mbid == '':
             artist_response = fetch_mbid(mbid)

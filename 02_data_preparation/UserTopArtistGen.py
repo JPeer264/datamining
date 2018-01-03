@@ -14,6 +14,7 @@ class UserTopArtistGen:
         self.artist_names = []
         self.artist_mbids = []
         self.user = []
+        self.max_users = 30000
 
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/user_top_artists/"
@@ -36,7 +37,7 @@ class UserTopArtistGen:
         artist_mbids = []
 
         with open(self.ARTIST_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
 
             for row in reader:
@@ -70,7 +71,7 @@ class UserTopArtistGen:
             return ""
 
         for i, entry in enumerate(track_format):
-            temp_line = "\t"
+            temp_line = "%"
 
             if i == 0:
                 temp_line = ""
@@ -80,7 +81,7 @@ class UserTopArtistGen:
             if track == "init":
                 name = entry
             else:
-                name = track[entry]
+                name = re.sub(r'%*', '', track[entry])
 
             line = line + temp_line + name
 
@@ -94,17 +95,13 @@ class UserTopArtistGen:
         rank = track['@attr']['rank'].encode('utf8')
         artist_id = ""
 
-        if not mbid == "":
+        try:
             artist_id = self.artist_mbids.index(mbid)
-        else:
-            artist_id = self.artist_names.index(name)
-
-        self.artist_names.extend([name])
-
-        if not mbid == '':
-            self.artist_mbids.extend([mbid])
-        else:
-            self.artist_mbids.extend([name])
+        except ValueError:
+            try:
+                artist_id = self.artist_names.index(name)
+            except ValueError:
+                pass
 
         return {
             'user_id': str(self.user.index(username)),
@@ -123,20 +120,21 @@ class UserTopArtistGen:
 
     def prepare_top_artists_and_save(self):
         # loop over users top tracks
-        dirs = np.array(
-            glob(self.FETCHED_DATA + self.USER_TRACKS_LOOP + "/*/"))
 
-        for user_dir in dirs:
+        for idx, user in enumerate(self.user):
+            if idx > self.max_users:
+                continue
+
+            print str(idx) + ' of ' + str(len(self.user)) + " ## " + user
             tracks_line = self.artist_array_to_line("init")
-            username = user_dir.split("/")[-2]
-            files = glob(user_dir + "*.json")
-
+            user_dir = self.FETCHED_DATA + self.USER_TRACKS_LOOP + "/" + user
+            files = glob(user_dir + "/*.json")
             for file in files:
                 file_payload = json.load(open(file))
                 tracks = file_payload['topartists']['artist']
 
                 for track in tracks:
-                    track_array = self.get_artist_array(track, username)
+                    track_array = self.get_artist_array(track, user)
 
                     if track_array == "":
                         continue
@@ -144,7 +142,7 @@ class UserTopArtistGen:
                     tracks_line = tracks_line + \
                         self.artist_array_to_line(track_array)
 
-            self.save(tracks_line, username)
+            self.save(tracks_line, user)
 
 
 if __name__ == '__main__':

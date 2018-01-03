@@ -3,7 +3,7 @@ import csv
 
 class Artist:
     def __init__(self):
-        self.DATA = './data/'
+        self.DATA = './data_backup/'
         self.ARTISTS_FILE = self.DATA + 'artists.txt'
         self.ARTISTS_TAGS_FILE = self.DATA + 'artists_with_tags.txt'
 
@@ -16,7 +16,7 @@ class Artist:
         artist_names = []
 
         with open(self.ARTISTS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
             count = 0
 
@@ -29,7 +29,7 @@ class Artist:
         self.artist_names = artist_names
 
         with open(self.ARTISTS_TAGS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
 
             for row in reader:

@@ -9,7 +9,7 @@ from sompy.visualization.hitmap import HitMapView
 
 
 class SOM:
-    def __init__(self, file_name='top_artists-user_top_artists.txt'):
+    def __init__(self, file_name='top_tags-user_top_artists.txt'):
         self.DATA_DIR = './data_processed/'
         self.FEATURES_FILE = self.DATA_DIR + file_name
         self.OUTPUT_VISU_DIR = './visualizations/'
@@ -94,5 +94,5 @@ if __name__ == '__main__':
     som = SOM()
     som.train()
     som.plot_umatrix()
-    som.plot_hitmap()
-    som.plot_kmeans()
+    # som.plot_hitmap()
+    # som.plot_kmeans()

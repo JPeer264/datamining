@@ -49,7 +49,7 @@ class TagsGen:
         artist_mbid = []
 
         with open(self.ARTISTS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
 
             for row in reader:
@@ -65,7 +65,7 @@ class TagsGen:
             return ""
 
         for i, entry in enumerate(tag_format):
-            temp_line = "\t"
+            temp_line = "%"
 
             if i == 0:
                 temp_line = ""
@@ -75,7 +75,7 @@ class TagsGen:
             if tag == "init":
                 name = entry
             else:
-                name = tag[entry]
+                name = re.sub(r'%*', '', tag[entry])
 
             line = line + temp_line + name
 
@@ -130,7 +130,8 @@ class TagsGen:
             file_payload = json.load(open(file))
             tags = file_payload['tags']['tag']
 
-            for tag in tags:
+            for idx, tag in enumerate(tags):
+                print str(idx) + ' of ' + str(len(tags))
                 tag_array = self.get_tag_array(tag)
 
                 if tag_array == "":
@@ -147,7 +148,8 @@ class TagsGen:
         # loop over artists meta
         files = glob(self.FETCHED_DATA + self.ARTISTS_META + "/*.json")
 
-        for file in files:
+        for idx, file in enumerate(files):
+            print str(idx) + ' of ' + str(len(files))
             file_payload = json.load(open(file))
 
             if 'error' in file_payload:

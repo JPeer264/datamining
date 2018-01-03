@@ -1,8 +1,12 @@
 from glob import glob
 import numpy as np
-import json
 import csv
 import re
+
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 import helper
 from ArtistsGen import ArtistsGen
@@ -26,11 +30,12 @@ class FillArtists:
     def compute(self):
         self.artists, self.artist_names, self.artist_mbids = self.get_all_artists()
         self.artists_line = self.artist_array_to_line("init")
-        self.artists_tags_line = "artist_ref\ttags_refs\n"
+        self.artists_tags_line = "artist_ref%tags_refs\n"
         self.get_tags()
         all_artists = self.prepare_artists()
 
-        for artist in self.artists:
+        for idx, artist in enumerate(self.artists):
+            print str(idx) + ' of ' + str(len(self.artists))
             mbid = artist['mbid']
             name = artist['name']
             artist_to_merge = {}
@@ -62,6 +67,7 @@ class FillArtists:
 
             ##
             # artist tags
+            artist_tags = ""
             if (not mbid == '') and (mbid in self.tag_to_artist):
                 artist_tags = self.tag_to_artist[mbid]
 
@@ -88,7 +94,7 @@ class FillArtists:
         tag_names = []
 
         with open(self.TAGS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
             count = 0
 
@@ -110,12 +116,12 @@ class FillArtists:
         for tag in tags:
             name = tag['name']
             name = name.lower()
-            name = re.sub(r'\W*', '', name)
+            name = re.sub(r'[\W%]*', '', name)
 
             if name == "":
                 continue
 
-            result = result + "\t" + str(self.tag_names.index(name))
+            result = result + "%" + str(self.tag_names.index(name))
 
         key = name
 
@@ -135,7 +141,7 @@ class FillArtists:
         artists = []
 
         with open(self.ARTISTS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
 
             for row in reader:
@@ -179,7 +185,7 @@ class FillArtists:
             return ""
 
         for i, entry in enumerate(artist_format):
-            temp_line = "\t"
+            temp_line = "%"
 
             if i == 0:
                 temp_line = ""
@@ -189,7 +195,7 @@ class FillArtists:
             if artist == "init":
                 name = entry
             if entry in artist:
-                name = artist[entry]
+                name = re.sub(r'%*', '', artist[entry])
 
             line = line + temp_line + name
 
@@ -201,7 +207,8 @@ class FillArtists:
 
         files = glob(self.FETCHED_DATA + self.ARTISTS_META + "/*.json")
 
-        for file in files:
+        for idx, file in enumerate(files):
+            print str(idx) + ' of ' + str(len(files))
             file_payload = json.load(open(file))
 
             if 'error' in file_payload:

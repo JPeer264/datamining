@@ -14,17 +14,18 @@ class TracksGen:
     def __init__(self, no_artist_ref = False):
         self.tracks_line = ""
         self.top_tracks_line = ""
-        self.track_names = []
-        self.track_mbids = []
         self.artist_names = []
         self.artist_mbids = []
         self.no_artist_ref = no_artist_ref
+        self.max_users = 30000
+        self.users = []
 
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/"
         self.FILENAME = "tracks.txt"
         self.FILENAME_TOP_TRACKS = "top_tracks.txt"
         self.ARTISTS_FILE = self.SAVE_DIR + "artists.txt"
+        self.USERS_FILE = self.SAVE_DIR + "users.txt"
 
         self.USER_TRACKS_LOOP = 'user_top_tracks'
         self.USERS_RECENT_TRACKS_LOOP = 'user_recent_tracks'
@@ -35,6 +36,7 @@ class TracksGen:
         track_format = []
         track_format.extend(self.get_track_format())
         track_format_two = ['track_id', 'listeners', 'playcount', 'duration']
+        self.prepare_users()
 
         self.artist_names, self.artist_mbids = self.get_all_artists()
         self.tracks_line = self.track_array_to_line("init", track_format)
@@ -54,17 +56,23 @@ class TracksGen:
         return [ "name", "mbid", "artist_ref" ]
 
 
+    def prepare_users(self):
+        users = np.loadtxt(self.USERS_FILE, dtype='str', delimiter='\t')
+
+        self.users = users[1:]
+
+
     def get_all_artists(self):
         artist_names = []
         artist_mbid = []
 
         with open(self.ARTISTS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
 
             for row in reader:
                 name = row[headers.index("name")]
-                name = re.sub(r'\W*', '', name)
+                name = re.sub(r'\s*', '', name)
 
                 artist_names.append(name)
                 artist_mbid.append(row[headers.index("mbid")])
@@ -79,7 +87,7 @@ class TracksGen:
             return ""
 
         for i, entry in enumerate(track_format):
-            temp_line = "\t"
+            temp_line = "%"
 
             if i == 0:
                 temp_line = ""
@@ -89,7 +97,7 @@ class TracksGen:
             if track == "init":
                 name = entry
             else:
-                name = track[entry]
+                name = re.sub(r'%*', '', track[entry])
 
             line = line + temp_line + name
 
@@ -106,28 +114,19 @@ class TracksGen:
         else:
             artist = track['artist']['#text']
 
-        artist = re.sub(r'\W*', '', artist)
+        artist = re.sub(r'\s*', '', artist)
         artist_mbid = track['artist']['mbid']
         artist_id = ""
 
-        # playcount = track['playcount']
-
-        # make sure the track name or mbid exists
-        if ((mbid == '') and (name in self.track_names)) or (mbid in self.track_mbids):
-            return ""
-
         if not self.no_artist_ref:
-            if artist_mbid != "":
+            try:
                 artist_id = self.artist_mbids.index(artist_mbid)
-            else:
-                artist_id = self.artist_names.index(artist)
+            except ValueError:
+                try:
+                    artist_id = self.artist_names.index(artist)
+                except ValueError:
+                    pass
 
-        self.track_names.extend([name])
-
-        if not mbid == '':
-            self.track_mbids.extend([mbid])
-        else:
-            self.track_mbids.extend([name])
 
         return {
             'name': name.encode('utf8'),
@@ -157,91 +156,89 @@ class TracksGen:
 
     def prepare_tracks(self):
         # loop over users top tracks
-        all_tracks_array = np.array([])
-        top_tracks_array = np.array([])
+        all_tracks_dict = {}
+        top_tracks_dict = {}
 
         # loop over top tracks
-        files = glob(self.FETCHED_DATA + self.TOP_TRACKS_LOOP + "/*.json")
-
-        for idx, file in enumerate(files):
-            print str(idx) + ' of ' + str(len(files)) + ' ## ' + file
-            file_payload = json.load(open(file))
+        try:
+            file_payload = json.load(open(self.FETCHED_DATA + self.TOP_TRACKS_LOOP + "/" + "/page_1.json"))
             tracks = file_payload['tracks']['track']
+            print str(len(tracks)) + ' tracks'
 
             for track in tracks:
                 track_array = self.get_track_array(track)
 
-                if track_array == "":
-                    continue
-
                 top_track = {}
-                top_track['track_id'] = str(len(all_tracks_array))
+                top_track['track_id'] = str(len(all_tracks_dict.values()))
                 top_track['listeners'] = track['listeners']
                 top_track['playcount'] = track['playcount']
                 top_track['duration'] = track['duration']
 
-                if len(top_tracks_array) == 0:
-                    top_tracks_array = np.array([top_track])
+                if not track_array['mbid'] == '':
+                    name = track_array['mbid']
                 else:
-                    top_tracks_array = np.append(top_tracks_array, [top_track], axis=0)
+                    name = track_array['name']
 
-                if len(all_tracks_array) == 0:
-                    all_tracks_array = np.array([track_array])
-                else:
-                    all_tracks_array = np.append(all_tracks_array, [track_array], axis=0)
+                top_tracks_dict[name] = top_track
+                all_tracks_dict[name] = track_array
+        except IOError:
+            print 'failed'
+
 
         # loop over user_tracks
-        dirs = np.array(glob(self.FETCHED_DATA + self.USER_TRACKS_LOOP + "/*/"))
+        for idx, user in enumerate(self.users):
+            if idx > self.max_users:
+                continue
 
-        for idx, user_dir in enumerate(dirs):
-            files = glob(user_dir + "*.json")
+            print str(idx) + ' of ' + str(len(self.users)) + ' ## ' + user
 
-            for idx_inner, file in enumerate(files):
-                print str(idx) + ' of ' + str(len(dirs)) + ' ## ' + user_dir
-                print str(idx_inner) + ' of ' + str(len(files)) + ' ## ' + file
-                file_payload = json.load(open(file))
-                tracks = file_payload['toptracks']['track']
+            try:
+                file_payload = json.load(open(self.FETCHED_DATA + self.USER_TRACKS_LOOP + "/" + user + "/page_1.json"))
+            except IOError:
+                continue
 
-                for track in tracks:
-                    track_array = self.get_track_array(track)
+            tracks = file_payload['toptracks']['track']
+            print str(len(tracks)) + ' tracks'
 
-                    if track_array == "":
-                        continue
+            for track in tracks:
+                track_array = self.get_track_array(track)
 
-                    if len(all_tracks_array) == 0:
-                        all_tracks_array = np.array([track_array])
-                    else:
-                        all_tracks_array = np.append(all_tracks_array, [track_array], axis=0)
+                if not track_array['mbid'] == '':
+                    name = track_array['mbid']
+                else:
+                    name = track_array['name']
 
-            files = glob(user_dir + "*.json")
+                all_tracks_dict[name] = track_array
 
         # loop over users recent tracks
-        dirs = np.array(glob(self.FETCHED_DATA + self.USERS_RECENT_TRACKS_LOOP + "/*/"))
+        for idx, user in enumerate(self.users):
+            if idx > self.max_users:
+                continue
 
-        for idx, user_dir in enumerate(dirs):
-            files = glob(user_dir + "*.json")
-            for idx_inner, file in enumerate(files):
-                print str(idx) + ' of ' + str(len(dirs)) + ' ## ' + user_dir
-                print str(idx_inner) + ' of ' + str(len(files)) + ' ## ' + file
-                file_payload = json.load(open(file))
-                tracks = file_payload['recenttracks']['track']
+            print str(idx) + ' of ' + str(len(self.users)) + ' ## ' + user
 
-                for track in tracks:
-                    if '@attr' in track:
-                        if 'nowplaying' in track['@attr']:
-                            continue
+            try:
+                file_payload = json.load(open(self.FETCHED_DATA + self.USERS_RECENT_TRACKS_LOOP + "/" + user + "/page_1.json"))
+            except IOError:
+                continue
 
-                    track_array = self.get_track_array(track)
+            tracks = file_payload['recenttracks']['track']
 
-                    if track_array == "":
+            for track in tracks:
+                if '@attr' in track:
+                    if 'nowplaying' in track['@attr']:
                         continue
 
-                    if len(all_tracks_array) == 0:
-                        all_tracks_array = np.array([track_array])
-                    else:
-                        all_tracks_array = np.append(all_tracks_array, [track_array], axis=0)
+                track_array = self.get_track_array(track)
 
-        return all_tracks_array, top_tracks_array
+                if not track_array['mbid'] == '':
+                    name = track_array['mbid']
+                else:
+                    name = track_array['name']
+
+                all_tracks_dict[name] = track_array
+
+        return all_tracks_dict.values(), top_tracks_dict.values()
 
 if __name__ == '__main__':
     tracksGen = TracksGen()

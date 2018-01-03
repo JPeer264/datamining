@@ -17,7 +17,7 @@ class Tags:
         tag_names = []
 
         with open(self.TAGS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
             count = 0
 
@@ -34,7 +34,7 @@ class Tags:
         top_tags = np.array([])
 
         with open(self.TOP_TAGS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
 
             for row in reader:

@@ -4,7 +4,7 @@ from Artist import Artist
 
 class Tracks:
     def __init__(self):
-        self.DATA = './data/'
+        self.DATA = './data_backup/'
         self.TRACKS_FILE = self.DATA + 'tracks.txt'
 
         self.track_ids = []
@@ -17,7 +17,7 @@ class Tracks:
         artist_ids = []
 
         with open(self.TRACKS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
             count = 0
 

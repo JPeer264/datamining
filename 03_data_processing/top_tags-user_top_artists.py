@@ -11,8 +11,8 @@ from Tracks import Tracks
 
 class Process:
     def __init__(self):
-        self.TOP_TAGS = "./data/top_tags.txt"
-        self.USERS_TOP_ARTISTS = "./data/user_top_artists/"
+        self.TOP_TAGS = "./data_backup/top_tags.txt"
+        self.USERS_TOP_ARTISTS = "./data_backup/user_top_artists/"
         self.matrix = np.array([])
         self.tracks = Tracks()
         self.tracks.prepare_tracks()
@@ -24,7 +24,7 @@ class Process:
         tags = []
 
         with open(self.TOP_TAGS, 'r') as f:
-            reader = csv.reader(f, delimiter='\t')
+            reader = csv.reader(f, delimiter='%')
             headers = reader.next()
 
             for row in reader:
@@ -35,40 +35,49 @@ class Process:
         files = glob(self.USERS_TOP_ARTISTS + "*.txt")
         user_ids = []
 
-        for file in files:
+        for idx, file in enumerate(files):
+            print str(idx) + ' of ' + str(len(files))
             occurences = []
+            add = 0
 
             with open(file, 'r') as f:
-                reader = csv.reader(f, delimiter='\t')
+                reader = csv.reader(f, delimiter='%')
                 headers = reader.next()
 
                 for row in reader:
                     user_id = row[headers.index("user_id")]
 
-                    if not user_id in user_ids:
+                    if add == 0:
                         user_ids.append(user_id)
+                        print 'yap'
+                        print user_id
+                        add = 1
 
                     artist_tags = self.artists.get_artist_tags(row[headers.index("artist_ref")])
                     occurences.extend(artist_tags)
 
-            unique, counts = np.unique(np.array(occurences), return_counts=True)
-            zipped_counts = dict(zip(unique, counts))
+                if add == 0:
+                    continue
 
-            line = []
-            used_tags = []
+                unique, counts = np.unique(np.array(occurences), return_counts=True)
+                zipped_counts = dict(zip(unique, counts))
+                print ''
 
-            for tag in sorted_tags:
-                tag_id = str(tag[0])
-                used_tags.append(tag_id)
-                if tag_id in zipped_counts:
-                    line.append(zipped_counts[tag_id])
+                line = []
+                used_tags = []
+
+                for tag in sorted_tags:
+                    tag_id = str(tag[0])
+                    used_tags.append(tag_id)
+                    if tag_id in zipped_counts:
+                        line.append(zipped_counts[tag_id])
+                    else:
+                        line.append(0)
+
+                if len(self.matrix) == 0:
+                    self.matrix = np.array([line])
                 else:
-                    line.append(0)
-
-            if len(self.matrix) == 0:
-                self.matrix = np.array([line])
-            else:
-                self.matrix = np.append(self.matrix, [line], axis=0)
+                    self.matrix = np.append(self.matrix, [line], axis=0)
 
         header = np.append('user_id', used_tags)
         normalized_matrix = normalize(self.matrix)

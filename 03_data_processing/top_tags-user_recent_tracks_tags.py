@@ -11,32 +11,30 @@ from Tracks import Tracks
 
 class Process:
     def __init__(self):
-        self.TOP_ARTISTS = "./data/top_artists.txt"
-        self.USERS_TOP_ARTISTS = "./data/user_top_artists/"
+        self.DATA = './data_backup/'
+        self.TOP_TAGS = self.DATA + "top_tags.txt"
+        self.USERS_RECENT_TRACKS = self.DATA + "user_recent_tracks/"
         self.matrix = np.array([])
         self.tracks = Tracks()
         self.tracks.prepare_tracks()
-        self.artists = Artist()
-        self.artists.prepare_artists()
 
     def init(self):
-        artists = []
+        tags = []
 
-        with open(self.TOP_ARTISTS, 'r') as f:
+        with open(self.TOP_TAGS, 'r') as f:
             reader = csv.reader(f, delimiter='%')
             headers = reader.next()
 
             for row in reader:
-                artists.append(row)
+                tags.append(row)
 
-        # sort artists by playcounts
-        sorted_artists = np.sort(np.array(artists).astype(int).view(
-            'int,int,int'), order=['f2'], axis=0).view(np.int)[::-1]
-        files = glob(self.USERS_TOP_ARTISTS + "*.txt")
+        # sort tags by reach
+        sorted_tags = np.sort(np.array(tags).astype(int).view('int,int,int'), order=['f1'], axis=0).view(np.int)[::-1]
+        files = glob(self.USERS_RECENT_TRACKS + "*.txt")
         user_ids = []
 
         for file in files:
-            occurences = {}
+            occurences = []
 
             with open(file, 'r') as f:
                 reader = csv.reader(f, delimiter='%')
@@ -48,16 +46,20 @@ class Process:
                     if not user_id in user_ids:
                         user_ids.append(user_id)
 
-                    occurences[row[headers.index("artist_ref")]] = row
+                    artist_tags = self.tracks.get_tags(row[headers.index("track_ref")])
+                    occurences.extend(artist_tags)
+
+            unique, counts = np.unique(np.array(occurences), return_counts=True)
+            zipped_counts = dict(zip(unique, counts))
 
             line = []
-            used_artists = []
+            used_tags = []
 
-            for artist in sorted_artists:
-                artist_id = str(artist[0])
-                used_artists.append(artist_id)
-                if artist_id in occurences:
-                    line.append(occurences[artist_id][3])
+            for tag in sorted_tags:
+                tag_id = str(tag[0])
+                used_tags.append(tag_id)
+                if tag_id in zipped_counts:
+                    line.append(zipped_counts[tag_id])
                 else:
                     line.append(0)
 
@@ -66,7 +68,7 @@ class Process:
             else:
                 self.matrix = np.append(self.matrix, [line], axis=0)
 
-        header = np.append('user_id', used_artists)
+        header = np.append('user_id', used_tags)
         normalized_matrix = normalize(self.matrix)
         matrix_with_user_id = np.hstack(
             (np.array([user_ids]).T, normalized_matrix))
@@ -75,7 +77,7 @@ class Process:
         if not os.path.exists('./data_processed'):
             os.makedirs('./data_processed')
 
-        np.savetxt('./data_processed/top_artists-user_top_artists.txt', matrix_with_header.astype('str'),
+        np.savetxt('./data_processed/top_tags-user_recent_tracks_tags.txt', matrix_with_header.astype('str'),
                    delimiter='\t', fmt="%s")
 
 
