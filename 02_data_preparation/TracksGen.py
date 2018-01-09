@@ -14,10 +14,10 @@ class TracksGen:
     def __init__(self, no_artist_ref = False):
         self.tracks_line = ""
         self.top_tracks_line = ""
-        self.artist_names = []
-        self.artist_mbids = []
+        self.artist_names = {}
+        self.artist_mbids = {}
         self.no_artist_ref = no_artist_ref
-        self.max_users = 30000
+        self.max_users = 40000
         self.users = []
 
         self.FETCHED_DATA = "./fetched_data/"
@@ -43,12 +43,34 @@ class TracksGen:
         self.top_tracks_line = self.track_array_to_line("init", track_format_two)
         all_tracks, top_tracks = self.prepare_tracks()
 
-        for track in all_tracks:
-            self.tracks_line = self.tracks_line + self.track_array_to_line(track, track_format)
+        np_all_tracks = []
+        np_top_tracks = []
 
-        for track in top_tracks:
-            self.top_tracks_line = self.top_tracks_line + \
-                self.track_array_to_line(track, track_format_two)
+
+        for idx, track in enumerate(all_tracks):
+            print str(idx) + ' of ' + str(len(all_tracks)) + ' ## all_tracks'
+            line = []
+
+            for form in track_format:
+                line.append(track[form])
+
+            np_all_tracks.append(line)
+
+
+        for idx, track in enumerate(top_tracks):
+            print str(idx) + ' of ' + str(len(top_tracks)) + ' ## top_tracks'
+            line = []
+
+            for form in track_format_two:
+                line.append(track[form])
+
+            np_top_tracks.append(line)
+
+        np.savetxt(self.SAVE_DIR + self.FILENAME,
+                   np.array(np_all_tracks).astype('str'), delimiter='\t', fmt="%s")
+
+        np.savetxt(self.SAVE_DIR + self.FILENAME_TOP_TRACKS,
+                    np.array(np_top_tracks).astype('str'), delimiter='\t', fmt="%s")
 
 
     @staticmethod
@@ -63,19 +85,24 @@ class TracksGen:
 
 
     def get_all_artists(self):
-        artist_names = []
-        artist_mbid = []
+        artist_names = {}
+        artist_mbid = {}
 
         with open(self.ARTISTS_FILE, 'r') as f:
             reader = csv.reader(f, delimiter='%')
             headers = reader.next()
+            counter = 0
 
             for row in reader:
                 name = row[headers.index("name")]
                 name = re.sub(r'\s*', '', name)
+                mbid = row[headers.index("mbid")]
 
-                artist_names.append(name)
-                artist_mbid.append(row[headers.index("mbid")])
+                if not mbid == "":
+                    artist_mbid[row[headers.index("mbid")]] = counter
+
+                artist_names[name] = counter
+                counter += 1
 
         return artist_names, artist_mbid
 
@@ -120,11 +147,11 @@ class TracksGen:
 
         if not self.no_artist_ref:
             try:
-                artist_id = self.artist_mbids.index(artist_mbid)
-            except ValueError:
+                artist_id = self.artist_mbids[artist_mbid]
+            except KeyError:
                 try:
-                    artist_id = self.artist_names.index(artist)
-                except ValueError:
+                    artist_id = self.artist_names[artist]
+                except KeyError:
                     pass
 
 
@@ -229,6 +256,9 @@ class TracksGen:
                     if 'nowplaying' in track['@attr']:
                         continue
 
+                if not 'name' in track:
+                    continue
+
                 track_array = self.get_track_array(track)
 
                 if not track_array['mbid'] == '':
@@ -243,5 +273,5 @@ class TracksGen:
 if __name__ == '__main__':
     tracksGen = TracksGen()
     tracksGen.compute()
-    tracksGen.save()
-    tracksGen.save_top_tracks()
+    # tracksGen.save()
+    # tracksGen.save_top_tracks()

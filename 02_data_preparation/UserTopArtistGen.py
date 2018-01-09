@@ -14,7 +14,7 @@ class UserTopArtistGen:
         self.artist_names = []
         self.artist_mbids = []
         self.user = []
-        self.max_users = 30000
+        self.max_users = 40000
 
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/user_top_artists/"
@@ -33,19 +33,25 @@ class UserTopArtistGen:
         return ["user_id", "artist_ref", "rank", "playcount"]
 
     def get_all_artists(self):
-        artist_names = []
-        artist_mbids = []
+        artist_names = {}
+        artist_mbids = {}
 
         with open(self.ARTIST_FILE, 'r') as f:
             reader = csv.reader(f, delimiter='%')
             headers = reader.next()
 
+            counter = 0
+
             for row in reader:
                 name = row[headers.index("name")]
-                name = re.sub(r'\W*', '', name)
+                name = re.sub(r'\s*', '', name)
+                mbid = row[headers.index("mbid")]
 
-                artist_names.append(name)
-                artist_mbids.append(row[headers.index("mbid")])
+                if not mbid == "":
+                    artist_mbids[row[headers.index("mbid")]] = counter
+
+                artist_names[name] = counter
+                counter += 1
 
         return artist_names, artist_mbids
 
@@ -91,16 +97,16 @@ class UserTopArtistGen:
         name = track['name'].encode('utf8')
         mbid = track['mbid'].encode('utf8')
         playcount = track['playcount'].encode('utf8')
-        name = re.sub(r'\W*', '', name)
+        name = re.sub(r'\s*', '', name)
         rank = track['@attr']['rank'].encode('utf8')
         artist_id = ""
 
         try:
-            artist_id = self.artist_mbids.index(mbid)
-        except ValueError:
+            artist_id = self.artist_mbids[mbid]
+        except KeyError:
             try:
-                artist_id = self.artist_names.index(name)
-            except ValueError:
+                artist_id = self.artist_names[name]
+            except KeyError:
                 pass
 
         return {

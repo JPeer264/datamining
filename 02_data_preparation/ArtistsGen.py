@@ -16,7 +16,7 @@ class ArtistsGen:
         self.artists_line = ""
         self.top_artists_line = ""
         self.all_tracks = []
-        self.max_users = 30000
+        self.max_users = 40000
 
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/"

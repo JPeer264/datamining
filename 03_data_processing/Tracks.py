@@ -4,7 +4,7 @@ from Artist import Artist
 
 class Tracks:
     def __init__(self):
-        self.DATA = './data_backup/'
+        self.DATA = './data/'
         self.TRACKS_FILE = self.DATA + 'tracks.txt'
 
         self.track_ids = []
@@ -17,8 +17,8 @@ class Tracks:
         artist_ids = []
 
         with open(self.TRACKS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='%')
-            headers = reader.next()
+            reader = csv.reader(f, delimiter='\t')
+            headers = reader.next()[0].split(' ')
             count = 0
 
             for row in reader:
@@ -30,7 +30,12 @@ class Tracks:
         self.artist_ids = artist_ids
 
     def get_tags(self, track_ref):
-        artist_ref = self.artist_ids[int(track_ref)]
+        try:
+            artist_ref = self.artist_ids[int(track_ref)]
+        except IndexError:
+            return []
+        except ValueError:
+            return []
 
         return self.artists.get_artist_tags(artist_ref)
 

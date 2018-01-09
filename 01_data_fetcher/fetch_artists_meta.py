@@ -20,7 +20,7 @@ def read_artists():
         artist_names = []
         artist_mbids = []
 
-        reader = csv.reader(f, delimiter='\t')
+        reader = csv.reader(f, delimiter='%')
         headers = reader.next()
 
         for row in reader:
@@ -39,14 +39,26 @@ def save():
         if idx < int(sys.argv[1]):
             continue
 
-        print 'Fetch ' + str(idx) + ' of ' + str(len(artist_mbids))
-        if not mbid == '':
-            artist_response = fetch_mbid(mbid)
-        else:
-            artist_response = fetch_artist(artist_names[idx])
+        lala = True
+
+        while (lala):
+            print 'Fetch ' + str(idx) + ' of ' + str(len(artist_mbids))
+            try:
+                if not mbid == '':
+                    artist_response = fetch_mbid(mbid)
+                else:
+                    artist_response = fetch_artist(artist_names[idx])
+
+                if artist_response == {}:
+                    continue
+
+                helper.save_json(artist_response, this_dir + "/{idx}.json".format(idx=idx))
+                lala = False
+            except IOError:
+                print 'retry'
+                pass
 
 
-        helper.save_json(artist_response, this_dir + "/{idx}.json".format(idx=idx))
 
 if __name__ == '__main__':
     save()

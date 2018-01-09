@@ -14,7 +14,7 @@ class UserRecentTracksGen:
         self.track_names = []
         self.track_mbids = []
         self.user = []
-        self.max_users = 30000
+        self.max_users = 40000
 
         self.FETCHED_DATA = "./fetched_data/"
         self.SAVE_DIR = "./data/user_recent_tracks/"
@@ -33,22 +33,30 @@ class UserRecentTracksGen:
     def get_track_format():
         return ["user_id", "uts", "track_ref"]
 
+
     def get_all_tracks(self):
-        track_names = []
-        track_mbids = []
+        track_names = {}
+        track_mbids = {}
 
         with open(self.TRACKS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='%')
-            headers = reader.next()
+            reader = csv.reader(f, delimiter='\t')
+            headers = reader.next()[0].split(' ')
+
+            counter = 0
 
             for row in reader:
                 name = row[headers.index("name")]
-                name = re.sub(r'\W*', '', name)
+                name = re.sub(r'\s*', '', name)
+                mbid = row[headers.index("mbid")]
 
-                track_names.append(name)
-                track_mbids.append(row[headers.index("mbid")])
+                if not mbid == "":
+                    track_mbids[row[headers.index("mbid")]] = counter
+
+                track_names[name] = counter
+                counter += 1
 
         return track_names, track_mbids
+
 
     def get_user_names(self):
         user = []
@@ -89,19 +97,20 @@ class UserRecentTracksGen:
 
         return line + "\n"
 
+
     def get_track_array(self, track, username):
         name = track['name'].encode('utf8')
         mbid = track['mbid'].encode('utf8')
-        name = re.sub(r'\W*', '', name)
+        name = re.sub(r'\s*', '', name)
         uts = track['date']['uts'].encode('utf8')
         track_id = ""
 
         try:
-            track_id = self.track_mbids.index(mbid)
-        except ValueError:
+            track_id = self.track_mbids[mbid]
+        except KeyError:
             try:
-                track_id = self.track_names.index(name)
-            except ValueError:
+                track_id = self.track_names[name]
+            except KeyError:
                 pass
 
         return {
@@ -118,6 +127,7 @@ class UserRecentTracksGen:
 
         to_write_file.write(tosave)
         to_write_file.close()
+
 
     def prepare_recent_tracks_and_save(self):
         # loop over users top tracks
@@ -141,6 +151,9 @@ class UserRecentTracksGen:
                     if '@attr' in track:
                         if 'nowplaying' in track['@attr']:
                             continue
+
+                    if not 'name' in track:
+                        continue
 
                     all_tracks.append(track)
 

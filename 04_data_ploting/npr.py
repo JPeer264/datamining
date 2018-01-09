@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import os
+import scipy.sparse
 from sklearn.decomposition import PCA
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.manifold import MDS
@@ -12,7 +13,7 @@ import sklearn.metrics.pairwise as pair_dist
 
 
 class NPR:
-    def __init__(self, file_name='top_tags-user_top_artists.txt'):
+    def __init__(self, file_name='user_top_tracks-user_recent_tracks.txt'):
         self.DATA_DIR = './data_processed/'
         self.FEATURES_FILE = self.DATA_DIR + file_name
         self.OUTPUT_VISU_DIR = './visualizations/'
@@ -22,7 +23,7 @@ class NPR:
     def transform_tsne(perp=20.0):
         tsne = TSNE(
             n_components=2,
-            verbose=0,
+            verbose=1,
             perplexity=perp,
             early_exaggeration=12.0,
             learning_rate=200.0,
@@ -43,7 +44,7 @@ class NPR:
     def transform_mds():
         mds = MDS(
             n_components=2,
-            verbose=0,
+            verbose=1,
             dissimilarity='euclidean'
         )
 
@@ -54,6 +55,7 @@ class NPR:
         lle = LocallyLinearEmbedding(
             n_components=2,
             n_jobs=2,
+            verbose=1,
         )
 
         return lle
@@ -62,7 +64,8 @@ class NPR:
     @staticmethod
     def transform_lda():
         lda = LatentDirichletAllocation(
-            n_jobs=2
+            n_jobs=2,
+            verbose=1,
         )
 
         return lda
@@ -94,13 +97,31 @@ class NPR:
             print 'NPR(nn=%d): %.3f%%' % (nn, self.compute_NPR(pair_dist.euclidean_distances(self.data), pair_dist.euclidean_distances(self.Y), nn) * 100.0)
 
 
-    def train(self, method='tsne'):
-        raw_data = np.loadtxt(self.FEATURES_FILE, dtype='str', delimiter='\t')
+    def read_data(self):
+        filename, file_extension = os.path.splitext(self.FEATURES_FILE)
 
-        self.labels = raw_data[1:, 0]
-        self.header = raw_data[0, 1:]
+        if file_extension == '.txt':
+            raw_data = np.loadtxt(self.FEATURES_FILE,
+                                  dtype='str', delimiter='\t')
+
+            self.labels = raw_data[1:, 0]
+            self.header = raw_data[0, 1:]
+            self.data = np.delete(np.delete(raw_data, 0, 0), 0, 1).astype(
+                np.float)  # remove header, and left column
+        else:
+            self.labels = np.loadtxt(filename + "_y_labels.txt").astype('int')
+            self.header = np.loadtxt(filename + "_x_labels.txt").astype('int')
+            self.data = scipy.sparse.load_npz(filename + ".npz").todense()
+
+
+    def no_train(self):
+        self.read_data()
+        self.Y = self.data
+
+
+    def train(self, method='tsne'):
+        self.read_data()
         self.method = method
-        self.data = np.delete(np.delete(raw_data, 0, 0), 0, 1).astype(np.float)  # remove header, and left column
 
         algo = {
             'tsne': self.transform_tsne,
@@ -149,10 +170,10 @@ class NPR:
 
 if __name__ == '__main__':
     npr = NPR()
-    npr.train('lda')
-    kmeans = KMeans(n_clusters=15).fit(npr.Y)
+    npr.train('mds')
+    # kmeans = KMeans(n_clusters=15).fit(npr.Y)
     # npr.show_npr()
-    npr.plot(kmeans.labels_)
+    npr.plot()
 
     # test = npr.algo.fit(npr.Y)
     print ''

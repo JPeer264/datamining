@@ -11,7 +11,8 @@ except ImportError:
 import helper
 from ArtistsGen import ArtistsGen
 
-class FillArtists:
+
+class ArtistsGenreGen:
     def __init__(self):
         self.artists_line = ""
         self.artists = []
@@ -28,7 +29,7 @@ class FillArtists:
         self.ARTISTS_FILE = self.SAVE_DIR + self.FILENAME
 
     def compute(self):
-        self.artists, self.artist_names, self.artist_mbids = self.get_all_artists()
+        self.artist_names, self.artist_mbids = self.get_all_artists()
         self.artists_line = self.artist_array_to_line("init")
         self.artists_tags_line = "artist_ref%tags_refs\n"
         self.get_tags()
@@ -38,58 +39,24 @@ class FillArtists:
             print str(idx) + ' of ' + str(len(self.artists))
             mbid = artist['mbid']
             name = artist['name']
-            artist_to_merge = {}
-
-            ##
-            # fill artists
-            try:
-                if (not mbid == ''):
-                    artist_to_merge = all_artists[mbid]
-            except KeyError:
-                try:
-                    # not found but also name not in all_artists // --> no file found
-                    if (not name == ''):
-                        artist_to_merge = all_artists[name]
-                except KeyError:
-                    pass
-
-            artist_copy = artist.copy()
-            artist_copy.update(artist_to_merge)
-
-            self.artists_line = self.artists_line + \
-                self.artist_array_to_line(artist_copy)
-
-            idx = -1
-
-            try:
-                if (not mbid == ''):
-                    idx = self.artist_mbids[mbid]
-            except KeyError:
-                try:
-                    # not found but also name not in all_artists // --> no file found
-                    if (not name == ''):
-                        idx = self.artist_mbids[name]
-                except KeyError:
-                    pass
 
             ##
             # artist tags
             artist_tags = ""
-            try:
-                if (not mbid == ''):
-                    artist_tags = self.tag_to_artist[mbid]
-            except KeyError:
+            if not mbid == '':
                 try:
+                    artist_tags = self.tag_to_artist[mbid]
+                except ValueError:
                     # not found but also name not in all_artists // --> no file found
-                    if (not name == ''):
-                        artist_tags = self.tag_to_artist[name]
-                except KeyError:
-                    pass
+                    if not name == '':
+                        try:
+                            artist_tags = self.tag_to_artist[name]
+                        except ValueError:
+                            pass
 
             if not idx == -1:
                 self.artists_tags_line = self.artists_tags_line + \
                     str(idx) + artist_tags + "\n"
-
 
     @staticmethod
     def get_artist_format():
@@ -98,7 +65,6 @@ class FillArtists:
         artists_format.extend(['listeners', 'playcount'])
 
         return artists_format
-
 
     def get_tags(self):
         tag_ids = []
@@ -117,8 +83,7 @@ class FillArtists:
         self.tag_ids = tag_ids
         self.tag_names = tag_names
 
-
-    def normalize_tags(self, tags, name, mbid):
+    def normalize_genres(self, tags, name, mbid):
         result = ""
 
         if len(tags) <= 0:
@@ -132,12 +97,7 @@ class FillArtists:
             if name == "":
                 continue
 
-            try:
-                tag_id = self.tag_names.index(name)
-            except ValueError:
-                continue
-
-            result = result + "%" + str(tag_id)
+            result = result + "%" + str(self.tag_names.index(name))
 
         key = name
 
@@ -150,39 +110,6 @@ class FillArtists:
         self.tag_to_artist[key] = result
 
 
-    def get_all_artists(self):
-        artists_format = ArtistsGen.get_artist_format()
-        artist_names = {}
-        artist_mbid = {}
-        artists = []
-
-        with open(self.ARTISTS_FILE, 'r') as f:
-            reader = csv.reader(f, delimiter='%')
-            headers = reader.next()
-
-            counter = 0
-
-            for row in reader:
-                artist = {}
-
-                name = row[headers.index("name")]
-                name = re.sub(r'\s*', '', name)
-                mbid = row[headers.index("mbid")]
-
-                if not mbid == "":
-                    artist_mbid[row[headers.index("mbid")]] = counter
-
-                artist_names[name] = counter
-                counter += 1
-
-                for rowName in artists_format:
-                    artist[rowName] = row[headers.index(rowName)]
-
-                artists.append(artist)
-
-        return artists, artist_names, artist_mbid
-
-
     def get_artist_array(self, artist):
         name = artist['name'].encode('utf8')
         mbid = ''
@@ -192,7 +119,7 @@ class FillArtists:
         if 'mbid' in artist:
             mbid = artist['mbid'].encode('utf8')
 
-        self.normalize_tags(artist['tags']['tag'], name, mbid)
+        self.normalize_genres(artist['tags']['tag'], name, mbid)
 
         return {
             'name': name,
@@ -200,7 +127,6 @@ class FillArtists:
             'listeners': listeners,
             'playcount': playcount,
         }
-
 
     def artist_array_to_line(self, artist="init"):
         artist_format = self.get_artist_format()
@@ -226,30 +152,27 @@ class FillArtists:
 
         return line + "\n"
 
+    def get_all_artists(self):
+        artist_names = {}
+        artist_mbid = {}
 
-    def prepare_artists(self):
-        all_artist_object = {}
+        with open(self.ARTISTS_FILE, 'r') as f:
+            reader = csv.reader(f, delimiter='%')
+            headers = reader.next()
+            counter = 0
 
-        files = glob(self.FETCHED_DATA + self.ARTISTS_META + "/*.json")
+            for row in reader:
+                name = row[headers.index("name")]
+                name = re.sub(r'\s*', '', name)
+                mbid = row[headers.index("mbid")]
 
-        for idx, file in enumerate(files):
-            print str(idx) + ' of ' + str(len(files))
-            file_payload = json.load(open(file))
+                if not mbid == "":
+                    artist_mbid[row[headers.index("mbid")]] = counter
 
-            if 'error' in file_payload:
-                continue
+                artist_names[name] = counter
+                counter += 1
 
-            artist = file_payload['artist']
-            artist_array = self.get_artist_array(artist)
-            key = artist_array['name']
-
-            if not artist_array['mbid'] == '':
-                key = artist_array['mbid']
-
-            all_artist_object[key] = artist_array
-
-        return all_artist_object
-
+        return artist_names, artist_mbid
 
     def save(self):
         helper.ensure_dir(self.SAVE_DIR)
@@ -260,17 +183,7 @@ class FillArtists:
         to_write_file.close()
 
 
-    def saveTags(self):
-        helper.ensure_dir(self.SAVE_DIR)
-
-        to_write_file = open(self.SAVE_DIR + self.FILENAME_TAGS, 'w')
-
-        to_write_file.write(self.artists_tags_line)
-        to_write_file.close()
-
-
 if __name__ == '__main__':
-    fillArtists = FillArtists()
-    fillArtists.compute()
-    fillArtists.save()
-    fillArtists.saveTags()
+    artistsGenreGen = ArtistsGenreGen()
+    artistsGenreGen.compute()
+    artistsGenreGen.save()

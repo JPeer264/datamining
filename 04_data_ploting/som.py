@@ -3,28 +3,36 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import os
 import sompy
+import scipy.sparse
 from sompy.visualization.mapview import View2D
 from sompy.visualization.bmuhits import BmuHitsView
 from sompy.visualization.hitmap import HitMapView
 
 
 class SOM:
-    def __init__(self, file_name='top_tags-user_top_artists.txt'):
+    def __init__(self, file_name='user_top_tracks-user_recent_tracks-short.txt'):
         self.DATA_DIR = './data_processed/'
         self.FEATURES_FILE = self.DATA_DIR + file_name
         self.OUTPUT_VISU_DIR = './visualizations/'
 
 
     def train(self):
-        data = np.loadtxt(self.FEATURES_FILE, dtype='str', delimiter='\t')
-        user_ids = data[1:, 0]
-        tags = data[0, 1:]
-        new_data = np.delete(np.delete(data, 0, 0), 0, 1).astype(np.float) # remove header, and left column
+        filename, file_extension = os.path.splitext(self.FEATURES_FILE)
 
-        map_size = [8, 12]
+        if file_extension == '.txt':
+            data = np.loadtxt(self.FEATURES_FILE, dtype=np.float, delimiter='\t')
+            # user_ids = loaded_data[1:, 0]
+            # tags = loaded_data[0, 1:]
+            # data = np.delete(np.delete(loaded_data, 0, 0), 0, 1).astype(np.float) # remove header, and left column
+        else:
+            data = scipy.sparse.load_npz(filename + ".npz").todense()
+            user_ids = np.loadtxt(filename + "_y_labels.txt").astype('int')
+            tags = np.loadtxt(filename + "_x_labels.txt").astype('int')
+
+        map_size = [30, 40]
         # Init and train SOM
         som = sompy.SOMFactory.build(
-            new_data,
+            data,
             map_size,
             mask=None,
             mapshape='planar',

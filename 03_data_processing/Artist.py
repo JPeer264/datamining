@@ -3,7 +3,7 @@ import csv
 
 class Artist:
     def __init__(self):
-        self.DATA = './data_backup/'
+        self.DATA = './data/'
         self.ARTISTS_FILE = self.DATA + 'artists.txt'
         self.ARTISTS_TAGS_FILE = self.DATA + 'artists_with_tags.txt'
 

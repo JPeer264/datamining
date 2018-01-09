@@ -33,9 +33,14 @@ def api_call(apiString):
     # Perform API-call and save (comes as String formatted as JSON)
     json_string = urllib.urlopen(url).read()
 
+    try:
+        result = json.loads(json_string)
+    except ValueError:
+        result = {}
+
     # load() loads JSON from a file or file-like object
     # loads() loads JSON from a given string or unicode object
-    return json.loads(json_string)
+    return result
 # /lfm_api_user_call
 
 
