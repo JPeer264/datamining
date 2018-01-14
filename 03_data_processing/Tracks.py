@@ -14,7 +14,7 @@ class Tracks:
 
     def prepare_tracks(self):
         track_ids = []
-        artist_ids = []
+        artist_ids = {}
 
         with open(self.TRACKS_FILE, 'r') as f:
             reader = csv.reader(f, delimiter='\t')
@@ -23,7 +23,7 @@ class Tracks:
 
             for row in reader:
                 track_ids.append(count)
-                artist_ids.append(row[headers.index("artist_ref")])
+                artist_ids[str(count)] = row[headers.index("artist_ref")]
                 count = count + 1
 
         self.track_ids = track_ids
@@ -38,6 +38,13 @@ class Tracks:
             return []
 
         return self.artists.get_artist_tags(artist_ref)
+
+
+    def get_artist(self, track_ref):
+        try:
+            return self.artist_ids[track_ref]
+        except KeyError:
+            return '-1'
 
 
 if __name__ == '__main__':

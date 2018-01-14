@@ -10,7 +10,7 @@ from sompy.visualization.hitmap import HitMapView
 
 
 class SOM:
-    def __init__(self, file_name='user_top_tracks-user_recent_tracks-short.txt'):
+    def __init__(self, file_name='user_top_tracks-user_recent_tracks.npz'):
         self.DATA_DIR = './data_processed/'
         self.FEATURES_FILE = self.DATA_DIR + file_name
         self.OUTPUT_VISU_DIR = './visualizations/'
@@ -26,8 +26,8 @@ class SOM:
             # data = np.delete(np.delete(loaded_data, 0, 0), 0, 1).astype(np.float) # remove header, and left column
         else:
             data = scipy.sparse.load_npz(filename + ".npz").todense()
-            user_ids = np.loadtxt(filename + "_y_labels.txt").astype('int')
-            tags = np.loadtxt(filename + "_x_labels.txt").astype('int')
+            # user_ids = np.loadtxt(filename + "_y_labels.txt").astype('int')
+            # tags = np.loadtxt(filename + "_x_labels.txt").astype('int')
 
         map_size = [30, 40]
         # Init and train SOM
@@ -102,5 +102,5 @@ if __name__ == '__main__':
     som = SOM()
     som.train()
     som.plot_umatrix()
-    # som.plot_hitmap()
-    # som.plot_kmeans()
+    som.plot_hitmap()
+    som.plot_kmeans()
